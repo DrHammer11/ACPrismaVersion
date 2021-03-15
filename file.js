@@ -643,15 +643,6 @@ function StartGame() {
             fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
             for (i = 0; i < gridx*gridy; i++) {
                 currentx += 1;
-                if (TheBossWave.background != [] && IsBossWave) {
-                    BossSprite = document.createElement("img");
-                    BossSprite.src = TheBossWave.background[0];
-                    BossSprite.style.position = "absolute";
-                    BossSprite.style.height = (9.5*gridsize).toString()+"%";
-                    BossSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
-                    BossSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
-                    wc.appendChild(BossSprite);
-                }
                 ItemSprite = document.createElement("img");
                 newgi = new griditem();
                 newgi.codx = currentx;
@@ -725,7 +716,7 @@ function StartGame() {
     zhealtharray = [];
     zhealthbararray = [];
     currentPlant.coords = [2,2];
-    difficultylevel = 1;
+    difficultylevel = 4;
     StopTurn = false;
     planthealth.innerHTML = Object.assign(currentPlant.permhealth);
     currentPlant.health = Object.assign(currentPlant.permhealth);
@@ -936,7 +927,7 @@ function DoDamage(zombie, damageprojectile) {
     else {
         CreateConsoleText(currentPlant.name+" has hit "+zombie.name+" for "+ Math.round(damageprojectile.damage*currentPlant.dmgmult)+" damage.",true);
         zombie.health -= Math.round(damageprojectile.damage*currentPlant.dmgmult);
-        UpdatePassivePerks("everyattack",damageprojectile.damage);
+        UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
         if (zombie.health <= 0) {
             CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
             RemoveZombie(zombie);
@@ -956,9 +947,9 @@ function DoDamage(zombie, damageprojectile) {
                     if (!(x == 0 && y == 0)) {
                         for (z in ZombieArray) {
                             if (ZombieArray[z].coords[0] == zombie.coords[0]+x && ZombieArray[z].coords[1] == zombie.coords[1]+y) {
-                                CreateConsoleText(currentPlant.name+" has hit "+ZombieArray[z].name+" for "+ damageprojectile.splashDamage+" splash damage.");
-                                ZombieArray[z].health -= damageprojectile.splashDamage;
-                                UpdatePassivePerks("everyattack",damageprojectile.splashDamage);
+                                CreateConsoleText(currentPlant.name+" has hit "+ZombieArray[z].name+" for "+Math.round(damageprojectile.splashDamage*currentPlant.dmgmult)+" splash damage.");
+                                ZombieArray[z].health -= Math.round(damageprojectile.splashDamage*currentPlant.dmgmult);
+                                UpdatePassivePerks("everyattack",Math.round(damageprojectile.splashDamage*currentPlant.dmgmult));
                                 if (ZombieArray[z].health <= 0) {
                                     CreateConsoleText(currentPlant.name+" has vanquished "+ZombieArray[z].name+".")
                                     RemoveZombie(ZombieArray[z]);
@@ -1247,15 +1238,6 @@ function LoadGame() {
             fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
             for (i = 0; i < gridx*gridy; i++) {
                 currentx += 1;
-                if (TheBossWave.background != [] && IsBossWave) {
-                    BossSprite = document.createElement("img");
-                    BossSprite.src = TheBossWave.background[0];
-                    BossSprite.style.position = "absolute";
-                    BossSprite.style.height = (9.5*gridsize).toString()+"%";
-                    BossSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
-                    BossSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
-                    wc.appendChild(BossSprite);
-                }
                 ItemSprite = document.createElement("img");
                 newgi = new griditem();
                 newgi.codx = currentx;
@@ -1347,6 +1329,11 @@ function LoadGame() {
         zombi.className = "Fighter";
         zombi.style.height = ZombieArray[z].height;
         zombi.src = ZombieArray[z].aliveSprite;
+        if (ZombieArray[z].tickgiver != "") {
+            if (ZombieArray[z].tickgiver.effectType == "fire") {
+                zombi.style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
+            }   
+        }
         wc.appendChild(zombi);
         fighterPhysArray.push(zombi);
         zombi.style.transform = "scaleX(1)";
@@ -1888,7 +1875,7 @@ function ChooseAPerk(chosenPerks=[]) {
     MessageText.innerHTML = "CHOOSE A PERK!";
     Message.appendChild(MessageText); 
     choosablePerks = passivePerks.concat(characterPerks);
-    for (perk in currentPlant.passiveperks) {
+    for (perk in currentPlant.passiveperks) { //*im tsill egign s sma peirjsijf
         perk = currentPlant.passiveperks[perk];
         index = choosablePerks.indexOf(perk);
         if (index > -1) {
@@ -2273,13 +2260,27 @@ function UpdateTurnCount() {
         turncounter.innerHTML = currentPlant.name+"'s Turn: 0 move left and 0 ability left";
     }
 }
-function UpdateTicks() { //*fix
+function UpdateTicks() { 
     for (z in ZombieArray) {
         zombie = ZombieArray[z];
         if (zombie.tickgiver != "") {
             CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.")
+            zombie.health -= Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult);
+            UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult));
+            if (zombie.health <= 0) {
+                CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
+                RemoveZombie(zombie);
+                zombiedead = true;
+                CheckForWin();
+            zombie.tickTimeLeft -= 1;
+            if (zombie.tickTimeLeft == 0) {
+                fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
+                zombie.tickgiver == "";
+            }
+            }
         }
     }
+    updategrid();
 }
 function ApplyEffects(Fighter1,Fighter2,attack) {
     if (attack.effectType == "frozen") {
@@ -2305,6 +2306,7 @@ function ApplyEffects(Fighter1,Fighter2,attack) {
         CreateConsoleText(Fighter1.name+" has lit "+Fighter2.name+" on fire for two turns.") 
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
         Fighter2.tickgiver = attack;
+        Fighter2.tickTimeLeft = attack.effectDuration;
     }
     Fighter2.understatus = true;
 }
@@ -2442,9 +2444,9 @@ function UpdatePassivePerks(perkrate,value=false) {
             }
         }
         else if (perk.updaterate == "everymove" && perk.updaterate == perkrate) {
-            CreateConsoleText(currentPlant.name+" has bumped into "+value.name+" for "+perk.values[perk.level-1]+" damage."); 
-            value.health -= perk.values[perk.level-1];
-            UpdatePassivePerks("everyattack",perk.values[perk.level-1]);
+            CreateConsoleText(currentPlant.name+" has bumped into "+value.name+" for "+Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult)+" damage."); 
+            value.health -= Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult);
+            UpdatePassivePerks("everyattack",Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult));
             if (value.health <= 0) {
                 CreateConsoleText(currentPlant.name+" has vanquished "+value.name+".") 
                 if (value.underShield == "")
@@ -2629,6 +2631,7 @@ class Fighter {
         this.effectCooldown = 0;
         this.stunned = false; //Im stuff
         this.tickgiver = ""; //how many variables are there jeez
+        this.tickTimeLeft = 0;
         this.coords = []; //x and y positions on the grid
         this.attacks = []; //what attacks this character has
         this.supports = [];
@@ -2779,7 +2782,7 @@ function ApplyCharacterPerk(cp) { //haha funni child secks
     cp.plant.attacks[0] = cp.newability;
 
 }
-//ApplyCharacterPerk(FirePea);
+ApplyCharacterPerk(FirePea); //*make where you actually enee to incule it
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3225,7 +3228,7 @@ for (x=4; x<10; x++) {
 }
 AllImps.randomizecoords = true;
 AllImps.theme = "ImpTheme.mp3"; 
-AllImps.background = ["CastleTile.PNG","RegBackground.PNG"];
+AllImps.background = ["CastleTile.PNG","CastleBackground.PNG"];
 BossWaves.push(AllImps);
 Garg = new BossWave();
 Garg.name = "Gaggling Gargantuars";
@@ -3555,15 +3558,6 @@ function SwitchAD() {
     currenty = 0
     for (i = 0; i < gridx*gridy; i++) {
         currentx += 1;
-        if (TheBossWave.background != [] && IsBossWave) {
-            BossSprite = document.createElement("img");
-            BossSprite.src = TheBossWave.background[0];
-            BossSprite.style.position = "absolute";
-            BossSprite.style.height = (9.5*gridsize).toString()+"%";
-            BossSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
-            BossSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
-            wc.appendChild(BossSprite);
-        }
         ItemSprite = document.createElement("img");
         newgi = new griditem();
         newgi.codx = currentx;
@@ -4186,6 +4180,7 @@ function ZombieTurn(z) {
                                             MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                         }
                                         setTimeout(function() {
+                                            UpdateTicks();
                                             UpdatePassivePerks("everyturn");
                                             IsPlayerTurn = true;
                                             ConsoleHistory.push("~ Plant's Turn ~");
@@ -4208,6 +4203,7 @@ function ZombieTurn(z) {
                                             MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                         }
                                         setTimeout(function() {
+                                            UpdateTicks();
                                             UpdatePassivePerks("everyturn");
                                             IsPlayerTurn = true;
                                             ConsoleHistory.push("~ Plant's Turn ~");
@@ -4226,6 +4222,7 @@ function ZombieTurn(z) {
                                     MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                 }
                                 setTimeout(function() {
+                                    UpdateTicks();
                                     UpdatePassivePerks("everyturn");
                                     IsPlayerTurn = true;
                                     ConsoleHistory.push("~ Plant's Turn ~");
@@ -4315,6 +4312,7 @@ function ZombieTurn(z) {
                                                 MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                             }
                                             setTimeout(function() {
+                                                UpdateTicks();
                                                 UpdatePassivePerks("everyturn");
                                                 IsPlayerTurn = true;
                                                 ConsoleHistory.push("~ Plant's Turn ~");
@@ -4337,6 +4335,7 @@ function ZombieTurn(z) {
                                                 MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                             }
                                             setTimeout(function() {
+                                                UpdateTicks();
                                                 UpdatePassivePerks("everyturn");
                                                 IsPlayerTurn = true;
                                                 ConsoleHistory.push("~ Plant's Turn ~");
@@ -4355,7 +4354,7 @@ function ZombieTurn(z) {
                                         MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                     }
                                     setTimeout(function() {
-                                        //UpdateTicks();
+                                        UpdateTicks();
                                         UpdatePassivePerks("everyturn");
                                         IsPlayerTurn = true;
                                         ConsoleHistory.push("~ Plant's Turn ~");
