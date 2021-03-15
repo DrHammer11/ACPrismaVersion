@@ -4355,7 +4355,7 @@ function ZombieTurn(z) {
                                         MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                     }
                                     setTimeout(function() {
-                                        UpdateTicks();
+                                        //UpdateTicks();
                                         UpdatePassivePerks("everyturn");
                                         IsPlayerTurn = true;
                                         ConsoleHistory.push("~ Plant's Turn ~");
