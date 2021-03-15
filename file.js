@@ -1886,14 +1886,13 @@ function ChooseAPerk(chosenPerks=[]) {
     MessageText.style.position = "relative";
     MessageText.style.left = "40%"
     MessageText.innerHTML = "CHOOSE A PERK!";
-    choosablePerks = passivePerks.concat([]);
     Message.appendChild(MessageText); 
+    choosablePerks = passivePerks.concat(characterPerks);
     for (perk in currentPlant.passiveperks) {
-        if (choosablePerks.includes(perk)) {
-            index = choosablePerks.indexOf(perk);
-            if (index > -1) {
-                choosablePerks.splice(index, 1);
-            }
+        perk = currentPlant.passiveperks[perk];
+        index = choosablePerks.indexOf(perk);
+        if (index > -1) {
+            choosablePerks.splice(index, 1);
         }
     }
     for (p=0; chosenPerks.length<3; p++) { 
@@ -1919,8 +1918,8 @@ function ChooseAPerk(chosenPerks=[]) {
                         }
                     }
                     if (!(ag)) {
-                        if (currentPlant.passiveperks.length == 3) {
-                            alert("you currently have the maximum number of passive perks equipped. Please upgrade a perk instead.")
+                        if (currentPlant.passiveperks.length == 3) { 
+                            alert("you currently have the maximum number of passive perks equipped. Please upgrade a perk instead, or delete one of your existing perks.")
                         }
                         else {
                             currentPlant.passiveperks.push(chosenPerks[p])
@@ -1976,19 +1975,20 @@ function ChooseAPerk(chosenPerks=[]) {
     if (currentPlant.passiveperks.length > 0) {
         UpgradePerk = document.createElement("button");
         UpgradePerk.style.display = "block";
-        UpgradePerk.innerHTML = "Upgrade an existing perk instead";
+        UpgradePerk.innerHTML = "Upgrade or delete an existing perk instead";
         UpgradePerk.className = "MessageButton";
         UpgradePerk.style.position = "absolute";
         UpgradePerk.style.left = "35%";
         UpgradePerk.style.top = "90%";
         UpgradePerk.onclick = function() {
+            document.getElementById("ChoosePerk").remove();
             UpgradeAPerk(chosenPerks);
         }
         Message.appendChild(UpgradePerk);
     }
 
 }
-function ViewPerk(perk) { 
+function ViewPerk(perk, chosenPerks) { 
     wc = document.getElementById("EverythingFitter");
     MessageContainer = document.createElement("div");
     wc.appendChild(MessageContainer);
@@ -2009,7 +2009,12 @@ function ViewPerk(perk) {
     Message.appendChild(CloseButton);
     MessageText = document.createElement("p");
     MessageText.className = "MessageHeader";
-    MessageText.innerHTML = "Do you want to upgrade this perk from Level "+perk.level+" to Level "+(perk.level+1)+"?<br>";
+    if (perk.level < 3) {
+        MessageText.innerHTML = "Do you want to upgrade this perk from Level "+perk.level+" to Level "+(perk.level+1)+" or do you want to delete this perk?<br>";
+    }
+    else {
+        MessageText.innerHTML = "Do you want to delete this perk?"
+    }
     Message.appendChild(MessageText);
     perkcontainer = document.createElement("div");
     Message.appendChild(perkcontainer);
@@ -2055,23 +2060,41 @@ function ViewPerk(perk) {
         MessageText.innerHTML = "Level "+(rlv)+"<br>"+perk.levelstats[ls];
         perkcontainer.appendChild(MessageText);
     }
-    UpPerk = document.createElement("button");
-    UpPerk.style.display = "block";
-    UpPerk.innerHTML = "Upgrade perk";
-    UpPerk.className = "MessageButton";
-    UpPerk.onclick = function() {
-        ResetPerks();
-        perk.level += 1;
-        UpdatePassivePerks("onetime");
-        document.getElementById("UpgradePerk").remove();
-        document.getElementById("ViewingPerk").remove();
-        SaveGame();
-        LoadGame();
+    if (perk.level < 3) {
+        UpPerk = document.createElement("button");
+        UpPerk.style.display = "block";
+        UpPerk.innerHTML = "Upgrade perk";
+        UpPerk.className = "MessageButton";
+        UpPerk.onclick = function() {
+            ResetPerks();
+            perk.level += 1;
+            UpdatePassivePerks("onetime");
+            document.getElementById("UpgradePerk").remove();
+            document.getElementById("ViewingPerk").remove();
+            SaveGame();
+            LoadGame();
+        }
+        Message.appendChild(UpPerk);
     }
-    Message.appendChild(UpPerk);
+    DelPerk = document.createElement("button");
+    DelPerk.style.display = "block";
+    DelPerk.innerHTML = "Delete perk";
+    DelPerk.className = "MessageButton";
+    DelPerk.onclick = function() {
+        ResetPerks();
+        index = currentPlant.passiveperks.indexOf(perk);
+        if (index > -1) {
+            currentPlant.passiveperks.splice(index, 1);
+        }
+        UpdatePassivePerks("onetime");
+        SaveGame();
+        document.getElementById("ViewingPerk").remove();
+        document.getElementById("UpgradePerk").remove();
+        UpgradeAPerk(chosenPerks);
+    }
+    Message.appendChild(DelPerk);
 }
 function UpgradeAPerk(chosenPerks) {
-    document.getElementById("ChoosePerk").remove();
     wc = document.getElementById("EverythingFitter");
     MessageContainer = document.createElement("div");
     wc.appendChild(MessageContainer);
@@ -2096,13 +2119,7 @@ function UpgradeAPerk(chosenPerks) {
         MessageImage.onclick = function(event) {
             for (p in currentPlant.passiveperks) {
                 if (event.target.id === currentPlant.passiveperks[p].name) {
-                    if (currentPlant.passiveperks[p].level < 3) {
-                        ViewPerk(currentPlant.passiveperks[p]);
-                    }
-                    else {
-                        alert("That perk is already max level. Please choose a different perk to upgrade.")
-                    }
-
+                    ViewPerk(currentPlant.passiveperks[p], chosenPerks);
                 }
             }
         }
@@ -2152,6 +2169,7 @@ function UpgradeAPerk(chosenPerks) {
     ChoosePerk.style.left = "35%";
     ChoosePerk.style.top = "90%";
     ChoosePerk.onclick = function() {
+        document.getElementById("UpgradePerk").remove();
         ChooseAPerk(chosenPerks);
     }
     Message.appendChild(ChoosePerk);
@@ -2255,7 +2273,15 @@ function UpdateTurnCount() {
         turncounter.innerHTML = currentPlant.name+"'s Turn: 0 move left and 0 ability left";
     }
 }
-function ApplyEffects(Fighter1,Fighter2,attack) { 
+function UpdateTicks() { //*fix
+    for (z in ZombieArray) {
+        zombie = ZombieArray[z];
+        if (zombie.tickgiver != "") {
+            CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.")
+        }
+    }
+}
+function ApplyEffects(Fighter1,Fighter2,attack) {
     if (attack.effectType == "frozen") {
         if (Fighter2.plant)  {
             if (Fighter2.effectCooldown <= 0) {
@@ -2274,6 +2300,11 @@ function ApplyEffects(Fighter1,Fighter2,attack) {
         CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for one turn.") 
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
         Fighter2.stunned = true;
+    }
+    if (attack.effectType == "fire") {
+        CreateConsoleText(Fighter1.name+" has lit "+Fighter2.name+" on fire for two turns.") 
+        fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
+        Fighter2.tickgiver = attack;
     }
     Fighter2.understatus = true;
 }
@@ -2326,13 +2357,12 @@ function ResetPerks() {
         attacksToFix[attack].accuracyoffset = 0;
     }
 }
-function UpdatePassivePerks(perktype,value=false) {
-    console.log(perktype)
+function UpdatePassivePerks(perkrate,value=false) {
+    console.log(perkrate)
     rv = null; //*perk stuff
     for (perk in currentPlant.passiveperks) {
         perk = currentPlant.passiveperks[perk];
-        oldperk = clone(perk);
-        if (perk.updaterate == "everyturn" && perk.updaterate == perktype) {
+        if (perk.updaterate == "everyturn" && perk.updaterate == perkrate) {
             if (perk.type == "heal" && currentPlant.permhealth-currentPlant.health != 0) {
                 if (currentPlant.health+perk.values[perk.level-1] > currentPlant.permhealth) {
                     CreateConsoleText(currentPlant.name+" has healed for "+(currentPlant.permhealth-currentPlant.health)+" health.")
@@ -2354,7 +2384,7 @@ function UpdatePassivePerks(perktype,value=false) {
                 }
             }
         }
-        else if (perk.updaterate == "everyattack" && perk.updaterate == perktype) {
+        else if (perk.updaterate == "everyattack" && perk.updaterate == perkrate) {
             if (perk.type == "heal" && currentPlant.permhealth-currentPlant.health != 0) {
                 hpgain = Math.round(value*currentPlant.dmgmult*perk.values[perk.level-1])
                 if (currentPlant.health+hpgain > currentPlant.permhealth) {
@@ -2377,7 +2407,7 @@ function UpdatePassivePerks(perktype,value=false) {
                 }
             }
         }
-        else if (perk.updaterate == "onetime" && perk.updaterate == perktype) {
+        else if (perk.updaterate == "onetime" && perk.updaterate == perkrate) {
             if (perk.type == "iceimmunity") {
                 currentPlant.effectCooldown = 99;
                 Yeti.dmgmult = perk.values[perk.level-1];
@@ -2401,7 +2431,7 @@ function UpdatePassivePerks(perktype,value=false) {
                 SaveGame();
             }
         }
-        else if (perk.updaterate == "enemyattack" && perk.updaterate == perktype) {
+        else if (perk.updaterate == "enemyattack" && perk.updaterate == perkrate) {
             if (perk.type == "misschance" && value.accuracyoffset == 0) {
                 if (CriticalStage) {
                     value.accuracyoffset -= perk.values2[perk.level-1];
@@ -2411,8 +2441,8 @@ function UpdatePassivePerks(perktype,value=false) {
                 attacksToFix.push(value);
             }
         }
-        else if (perk.updaterate == "everymove" && perk.updaterate == perktype) {
-            CreateConsoleText(currentPlant.name+" has bumped into "+value.name+" for "+perk.values[perk.level-1]+" damage.");
+        else if (perk.updaterate == "everymove" && perk.updaterate == perkrate) {
+            CreateConsoleText(currentPlant.name+" has bumped into "+value.name+" for "+perk.values[perk.level-1]+" damage."); 
             value.health -= perk.values[perk.level-1];
             UpdatePassivePerks("everyattack",perk.values[perk.level-1]);
             if (value.health <= 0) {
@@ -2428,12 +2458,11 @@ function UpdatePassivePerks(perktype,value=false) {
             else {
                 rv = "hit";
             }
-            oldperk.updaterate = "everymove";
         }
-        else if (perktype == "everymove" && oldperk.updaterate != "everymove") {
+        else if (perkrate == "everymove" && rv == null) {
             rv = "miss";
         }
-        else if (perktype == "criticalphase") {
+        else if (perkrate == "criticalphase" && perk.updaterate == "criticalphase") {
             if (perk.type == "damagemult") { 
                 if (!(CriticalStage)) {
                     currentPlant.dmgmult = 1; 
@@ -2566,6 +2595,8 @@ class AttackType {
         this.STUP = 0;
         this.effectChance = 0; //percent chance to stun
         this.effectType = "";
+        this.effectDamage = 0; //only applue to dmg tick
+        this.effectDuration = 0; //ditto (clay)
         this.displaySprite = ""; //sprite displaying ability
     }
 }
@@ -2597,12 +2628,13 @@ class Fighter {
         this.understatus = false; //if the fighter is under a status or not
         this.effectCooldown = 0;
         this.stunned = false; //Im stuff
-        this.dmgtick = false;
+        this.tickgiver = ""; //how many variables are there jeez
         this.coords = []; //x and y positions on the grid
         this.attacks = []; //what attacks this character has
         this.supports = [];
         this.dmgmult = 1; //damage multiplieer
         this.passiveperks = [];
+        this.characterperk = "";
         this.movesLeft = 0;
         this.aliveSprite = ""; //hmm why is this specified to be alive? unless..
         this.iconSprite = "";
@@ -2694,11 +2726,12 @@ Peashoot.powerLevel = 9001;
 Peashoot.height = "26%";
 Peashoot.chewingtime = 0;
 Peashoot.attacks.push(Pea,Gatling,Bean);
+//Peashoot.passiveperks.push(SuckHeal,BumpAttack,ColdResist);
 Peashoot.aliveSprite = "RockPea.PNG";
 Peashoot.iconSprite = "PlantRight.PNG";
 currentPlant = Peashoot;
 plantArray = [AC,Peashoot];
-class CharacterPerk {
+class CharacterPerk {//*add character perks
     constructor() {
         this.name = "";  
         this.desc = "";  
@@ -2706,13 +2739,47 @@ class CharacterPerk {
         this.levelstats = []; 
         this.values = [0,0,0]; 
         this.values2 = [0,0,0]; 
-        this.updaterate = ""; 
+        this.values3 = [0,0,0];
         this.newability = ""; 
         this.sprite = ""; 
         this.plant = "";
     }
 }
-passivePerks = [];//*add character perks
+characterPerks = [];
+FireShot = new AttackType();
+"Scorch Shot (Primary) (Usable by Rock Pea)\
+Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns. (Range: 4 tiles) (Direct Damage: 50, DoT: 10) (Burn duration: 2 turns) (Burn Chance: 33%)\
+(Level 2): Burn Chance increased to 66%\
+(Level 3): Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."
+FireShot.name = "Scorch Shot"; 
+FireShot.desc = "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 10 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown";
+FireShot.damage = 50;
+FireShot.range = 4;
+FireShot.splashDamage = 10;
+FireShot.effectChance = 33;
+FireShot.effectType = "fire";
+FireShot.effectDamage = 10;
+FireShot.effectDuration = 2;
+FireShot.displaySprite = "FirePeaIcon.PNG";
+FirePea = new CharacterPerk();
+FirePea.name = "Scorch Shot";
+FirePea.desc = "(Only usable by Rock Pea) Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns.";
+FirePea.levelstats = ["(Range: 4 tiles) (Direct Damage: 50, Fire Damage: 10) (Burn duration: 2 turns) (Burn Chance: 33%)","Burn Chance increased to 66%","Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."];
+FirePea.values = [33,66,66];
+FirePea.values2 = [0,0,3];
+FirePea.newability = FireShot;
+FirePea.sprite = "FirePeaPerk.PNG";
+FirePea.plant = Peashoot;
+//characterPerks.push(FirePea);
+function ApplyCharacterPerk(cp) { //haha funni child secks
+    if (cp.name == "Scorch Shot") {
+        cp.newability.effectChance = cp.values[cp.level-1];
+        cp.newability.splashRadius = cp.values2[cp.level-1];
+    }
+    cp.plant.attacks[0] = cp.newability;
+
+}
+//ApplyCharacterPerk(FirePea);
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3158,6 +3225,7 @@ for (x=4; x<10; x++) {
 }
 AllImps.randomizecoords = true;
 AllImps.theme = "ImpTheme.mp3"; 
+AllImps.background = ["CastleTile.PNG","RegBackground.PNG"];
 BossWaves.push(AllImps);
 Garg = new BossWave();
 Garg.name = "Gaggling Gargantuars";
@@ -3191,7 +3259,7 @@ Graves.availablewaves = [15];
 Graves.availablecoords = [[9,0],[9,1],[9,2],[9,3],[9,4]];
 Graves.randomizecoords = false;
 Graves.theme = "GraveTheme.mp3"; 
-Graves.background = ["GraveTile.PNG","GraveBackground.PNG"]
+Graves.background = ["GraveTile.PNG","GraveBackground.PNG"];
 BossWaves.push(Graves);
 Zombotany = new BossWave();
 Zombotany.name = "Zombotany!";
@@ -3885,10 +3953,11 @@ function CheckZindexes() {
 }
 function NextToPlant(zombie) {
     testMoves = [[-1,0],[1,0],[0,1],[0,-1]];
-    for (move in testMoves)
+    for (move in testMoves) {
         if (zombie.coords[0]+testMoves[move][0] == currentPlant.coords[0] && zombie.coords[1]+testMoves[move][1] == currentPlant.coords[1]) {
             return true
         }
+    }
     return false
 }
 function CalculateMoves(zombie) { 
@@ -4286,6 +4355,7 @@ function ZombieTurn(z) {
                                         MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                     }
                                     setTimeout(function() {
+                                        UpdateTicks();
                                         UpdatePassivePerks("everyturn");
                                         IsPlayerTurn = true;
                                         ConsoleHistory.push("~ Plant's Turn ~");
@@ -4337,6 +4407,16 @@ function tryToMove() {
         prevppos = currentPlant.coords.slice(0);
         newspot = [griditemarray[phygriditems.indexOf(event.target)].codx,griditemarray[phygriditems.indexOf(event.target)].cody];
         gs = false;
+        testMoves = [[-1,0],[1,0],[0,1],[0,-1]];
+        for (move in testMoves) {
+            if (currentPlant.coords[0]+testMoves[move][0] == newspot[0] && currentPlant.coords[1]+testMoves[move][1] == newspot[1]) {
+                gs = true;
+            }
+        }
+        if (!(gs)) {
+            CreateConsoleText("You cannot move there.",false,false);
+            return;
+        }
         currentPlant.coords[0] = newspot[0];
         currentPlant.coords[1] = newspot[1];
         CanMove = false;
