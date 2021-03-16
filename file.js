@@ -2782,7 +2782,7 @@ function ApplyCharacterPerk(cp) { //haha funni child secks
     cp.plant.attacks[0] = cp.newability;
 
 }
-ApplyCharacterPerk(FirePea); //*make where you actually enee to incule it
+//ApplyCharacterPerk(FirePea); //*make where you actually enee to incule it
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
