@@ -1434,7 +1434,7 @@ function ResetGame() {
         ZTS = [];
         CPL = 0;
         ZombieArray = [Browncoat, Conehead, Imp, Buckethead, Yeti, GunZomb, FootballZomb, Screendoor, Newspaper, Disco]; 
-        //ZombieArray = [Yeti, Browncoat];
+        //ZombieArray = [GunZomb, Browncoat];
         availablecoords = [];
         for (x=4; x<10; x++) {
             for (y=0; y<5; y++) {
@@ -1528,6 +1528,7 @@ function ResetGame() {
     updatebackground();
     updategrid();
     SaveGame(); 
+    wc.innerHTML = '';
     if (IsBossWave) {
         LogoSound.reset();
         LogoSound.play();
@@ -1875,11 +1876,19 @@ function ChooseAPerk(chosenPerks=[]) {
     MessageText.innerHTML = "CHOOSE A PERK!";
     Message.appendChild(MessageText); 
     choosablePerks = passivePerks.concat(characterPerks);
-    for (perk in currentPlant.passiveperks) { //*im tsill egign s sma peirjsijf
-        perk = currentPlant.passiveperks[perk];
-        index = choosablePerks.indexOf(perk);
+    for (perk in choosablePerks) { 
+        perk = choosablePerks[perk];
+        index = currentPlant.passiveperks.indexOf(perk);
         if (index > -1) {
             choosablePerks.splice(index, 1);
+        }
+        if (characterPerks.includes(perk)) {
+            if (perk.plantName != currentPlant.name || currentPlant.characterperk == perk) {
+                index = choosablePerks.indexOf(perk);
+                if (index > -1) {
+                    choosablePerks.splice(index, 1);
+                }
+            }
         }
     }
     for (p=0; chosenPerks.length<3; p++) { 
@@ -1905,12 +1914,20 @@ function ChooseAPerk(chosenPerks=[]) {
                         }
                     }
                     if (!(ag)) {
-                        if (currentPlant.passiveperks.length == 3) { 
+                        if (currentPlant.passiveperks.length == 3 && !(characterPerks.includes(chosenPerks[p]))) { 
                             alert("you currently have the maximum number of passive perks equipped. Please upgrade a perk instead, or delete one of your existing perks.")
                         }
+                        else if (characterPerks.includes(chosenPerks[p]) && currentPlant.characterperk != "") {
+                            alert("you already have a character perk equipped. Please upgrade a perk instead, or delete your existing character perk.")
+                        }
                         else {
-                            currentPlant.passiveperks.push(chosenPerks[p])
-                            UpdatePassivePerks("onetime");
+                            if (passivePerks.includes(chosenPerks[p])) {
+                                currentPlant.passiveperks.push(chosenPerks[p])
+                                UpdatePassivePerks("onetime");
+                            }
+                            else if (characterPerks.includes(chosenPerks[p])) {
+                                ApplyCharacterPerk(chosenPerks[p])
+                            }
                             document.getElementById("ChoosePerk").remove();
                             SaveGame();
                             LoadGame();
@@ -1959,7 +1976,7 @@ function ChooseAPerk(chosenPerks=[]) {
         MessageText.style.color = "blue";
         DescContainer.appendChild(MessageText);
     }
-    if (currentPlant.passiveperks.length > 0) {
+    if (currentPlant.passiveperks.length > 0 || currentPlant.characterperk != "") {
         UpgradePerk = document.createElement("button");
         UpgradePerk.style.display = "block";
         UpgradePerk.innerHTML = "Upgrade or delete an existing perk instead";
@@ -2047,19 +2064,29 @@ function ViewPerk(perk, chosenPerks) {
         MessageText.innerHTML = "Level "+(rlv)+"<br>"+perk.levelstats[ls];
         perkcontainer.appendChild(MessageText);
     }
-    if (perk.level < 3) {
+    if (perk.level < 3) { 
         UpPerk = document.createElement("button");
         UpPerk.style.display = "block";
         UpPerk.innerHTML = "Upgrade perk";
         UpPerk.className = "MessageButton";
         UpPerk.onclick = function() {
-            ResetPerks();
-            perk.level += 1;
-            UpdatePassivePerks("onetime");
-            document.getElementById("UpgradePerk").remove();
-            document.getElementById("ViewingPerk").remove();
-            SaveGame();
-            LoadGame();
+            if (currentPlant.passiveperks.includes(perk)) {
+                ResetPerks();
+                perk.level += 1;
+                UpdatePassivePerks("onetime");
+                document.getElementById("UpgradePerk").remove();
+                document.getElementById("ViewingPerk").remove();
+                SaveGame();
+                LoadGame();
+            }
+            else {
+                perk.level += 1;
+                ApplyCharacterPerk(perk);
+                document.getElementById("UpgradePerk").remove();
+                document.getElementById("ViewingPerk").remove();
+                SaveGame();
+                LoadGame();
+            }
         }
         Message.appendChild(UpPerk);
     }
@@ -2068,16 +2095,31 @@ function ViewPerk(perk, chosenPerks) {
     DelPerk.innerHTML = "Delete perk";
     DelPerk.className = "MessageButton";
     DelPerk.onclick = function() {
-        ResetPerks();
-        index = currentPlant.passiveperks.indexOf(perk);
-        if (index > -1) {
-            currentPlant.passiveperks.splice(index, 1);
+        if (currentPlant.passiveperks.includes(perk)) {
+            ResetPerks();
+            index = currentPlant.passiveperks.indexOf(perk);
+            if (index > -1) {
+                currentPlant.passiveperks.splice(index, 1);
+            }
+            UpdatePassivePerks("onetime");
+            SaveGame();
+            document.getElementById("ViewingPerk").remove();
+            document.getElementById("UpgradePerk").remove();
+            UpgradeAPerk(chosenPerks);
         }
-        UpdatePassivePerks("onetime");
-        SaveGame();
-        document.getElementById("ViewingPerk").remove();
-        document.getElementById("UpgradePerk").remove();
-        UpgradeAPerk(chosenPerks);
+        else {
+            currentPlant.characterperk = "";
+            SaveGame();
+            if (currentPlant.name == "Rock Pea") {
+                plantArray[plant].attacks[0] = Rock;
+            }
+            else if (currentPlant.name == "Armor Chomper") {
+                plantArray[plant].attacks[0] = Rock;
+            }
+            document.getElementById("ViewingPerk").remove();
+            document.getElementById("UpgradePerk").remove();
+            UpgradeAPerk(chosenPerks);
+        }
     }
     Message.appendChild(DelPerk);
 }
@@ -2126,19 +2168,57 @@ function UpgradeAPerk(chosenPerks) {
         }
         MessageImage.style.position = "absolute";
         MessageImage.style.width = "15%";
-        MessageImage.style.left = (20+p*20).toString()+"%"
+        MessageImage.style.left = (10+p*20).toString()+"%"
         Message.appendChild(MessageImage);
         MessageText = document.createElement("p");
         MessageText.className = "MessageHeader";
         MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
         MessageText.style.position = "absolute";
         MessageText.style.color = "blue";
-        MessageText.style.left = (20+p*20).toString()+"%"
+        MessageText.style.left = (10+p*20).toString()+"%"
         MessageText.style.top = "55%";
         Message.appendChild(MessageText);
         DescContainer = document.createElement("div");
         DescContainer.style.position = "absolute";
-        DescContainer.style.left = (22+p*20).toString()+"%"
+        DescContainer.style.left = (12+p*20).toString()+"%"
+        DescContainer.style.top = "62%";
+        DescContainer.style.width = "15%";
+        Message.appendChild(DescContainer);
+        MessageText = document.createElement("p");
+        MessageText.className = "MessageText";
+        MessageText.innerHTML = perk.desc;
+        MessageText.style.color = "blue";
+        DescContainer.appendChild(MessageText);
+    }
+    if (currentPlant.characterperk != "") {
+        perk = currentPlant.characterperk;
+        MessageImage = document.createElement("img");
+        MessageImage.id = perk.name;
+        MessageImage.src = perk.sprite;
+        MessageImage.onclick = function() {
+            ViewPerk(currentPlant.characterperk, chosenPerks);
+        }
+        MessageImage.onmouseover = function(event) {
+            event.target.style.filter = "brightness(1.35)";
+        }
+        MessageImage.onmouseout = function(event) {
+            event.target.style.filter = "brightness(1)";
+        }
+        MessageImage.style.position = "absolute";
+        MessageImage.style.width = "15%";
+        MessageImage.style.left = "70%"
+        Message.appendChild(MessageImage);
+        MessageText = document.createElement("p");
+        MessageText.className = "MessageHeader";
+        MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
+        MessageText.style.position = "absolute";
+        MessageText.style.color = "blue";
+        MessageText.style.left = "67%"
+        MessageText.style.top = "55%";
+        Message.appendChild(MessageText);
+        DescContainer = document.createElement("div");
+        DescContainer.style.position = "absolute";
+        DescContainer.style.left = "72%"
         DescContainer.style.top = "62%";
         DescContainer.style.width = "15%";
         Message.appendChild(DescContainer);
@@ -2183,7 +2263,57 @@ function ViewPerks() {
     MessageText.className = "MessageHeader";
     MessageText.innerHTML = "These are all of your current perks.<br>";
     Message.appendChild(MessageText);
-    for (cperk in currentPlant.passiveperks) {
+    if (currentPlant.characterperk != "") {
+        perkcontainer = document.createElement("div");
+        Message.appendChild(perkcontainer);
+        MessageImage = document.createElement("img");
+        MessageImage.src = currentPlant.characterperk.sprite;
+        perkcontainer.appendChild(MessageImage);
+        MessageText = document.createElement("p");
+        MessageText.className = "MessageHeader";
+        MessageText.innerHTML = currentPlant.characterperk.name+" (Level "+currentPlant.characterperk.level+")";
+        perkcontainer.appendChild(MessageText);
+        if (currentPlant.characterperk.level == 1) {
+            MessageText.style.color = "blue";
+        }
+        else if (currentPlant.characterperk.level == 2) {
+            MessageText.style.color = "gold";
+        }
+        else if (currentPlant.characterperk.level == 3) {
+            MessageText.style.color = "purple";
+        }
+        MessageText = document.createElement("p");
+        MessageText.className = "MessageText";
+        MessageText.innerHTML = currentPlant.characterperk.desc;
+        perkcontainer.appendChild(MessageText);
+        for (ls in currentPlant.characterperk.levelstats) {
+            rlv = parseInt(ls)+1
+            if (rlv == currentPlant.characterperk.level) {
+                MessageText = document.createElement("b");
+                if (rlv == 1) {
+                    MessageText.style.color = "blue";
+                }
+                else if (rlv == 2) {
+                    MessageText.style.color = "gold";
+                }
+                else if (rlv == 3) {
+                    MessageText.style.color = "purple";
+                }
+            }
+            else {
+                MessageText = document.createElement("p");
+            }
+
+            MessageText.className = "MessageText";
+            MessageText.innerHTML = "Level "+(rlv)+"<br>"+currentPlant.characterperk.levelstats[ls];
+            perkcontainer.appendChild(MessageText);
+        }
+        MessageText = document.createElement("p");
+        MessageText.className = "MessageText";
+        MessageText.innerHTML = "--------------------------------------";
+        perkcontainer.appendChild(MessageText);
+    }
+    for (cperk in currentPlant.passiveperks) { 
         cperk = currentPlant.passiveperks[cperk];
         perkcontainer = document.createElement("div");
         Message.appendChild(perkcontainer);
@@ -2234,7 +2364,7 @@ function ViewPerks() {
         MessageText.innerHTML = "--------------------------------------";
         perkcontainer.appendChild(MessageText);
     }
-    if (currentPlant.passiveperks.length == 0) {
+    if (currentPlant.passiveperks.length == 0 && currentPlant.characterperk == "") {
         MessageText = document.createElement("p");
         MessageText.className = "MessageText";
         MessageText.innerHTML = "You don't have any perks. When you get a perk, it will show here.";
@@ -2261,7 +2391,9 @@ function UpdateTurnCount() {
     }
 }
 function UpdateTicks() { 
-    for (z in ZombieArray) {
+    offset = 0; 
+    for (z=0; z<ZombieArray.length+offset; ) { 
+        z = z-offset;
         zombie = ZombieArray[z];
         if (zombie.tickgiver != "") {
             CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.")
@@ -2269,16 +2401,18 @@ function UpdateTicks() {
             UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult));
             if (zombie.health <= 0) {
                 CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
-                RemoveZombie(zombie);
+                RemoveZombie(zombie); 
                 zombiedead = true;
                 CheckForWin();
+                offset += 1;
+            }
             zombie.tickTimeLeft -= 1;
-            if (zombie.tickTimeLeft == 0) {
+            if (zombie.tickTimeLeft == 0 && zombie.health > 0) {
                 fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
                 zombie.tickgiver == "";
             }
-            }
         }
+        z += 1+offset
     }
     updategrid();
 }
@@ -2360,8 +2494,7 @@ function ResetPerks() {
     }
 }
 function UpdatePassivePerks(perkrate,value=false) {
-    console.log(perkrate)
-    rv = null; //*perk stuff
+    rv = null; 
     for (perk in currentPlant.passiveperks) {
         perk = currentPlant.passiveperks[perk];
         if (perk.updaterate == "everyturn" && perk.updaterate == perkrate) {
@@ -2501,8 +2634,8 @@ attacksToFix = [];
 SelfHeal = new PassivePerk();
 SelfHeal.name = "Happy Heart";
 SelfHeal.desc = "Regain a small amount of health at the start of your turn.";
-SelfHeal.levelstats = ["Health Gained: 5","Health Gained: 15","Health Gained: 25"]
-SelfHeal.values = [5,15,25];
+SelfHeal.levelstats = ["Health Gained: 10","Health Gained: 20","Health Gained: 35"]
+SelfHeal.values = [10,20,35];
 SelfHeal.updaterate = "everyturn";
 SelfHeal.type = "heal";
 SelfHeal.sprite = "SelfHeal.PNG"
@@ -2745,7 +2878,7 @@ class CharacterPerk {//*add character perks
         this.values3 = [0,0,0];
         this.newability = ""; 
         this.sprite = ""; 
-        this.plant = "";
+        this.plantName = "";
     }
 }
 characterPerks = [];
@@ -2755,34 +2888,43 @@ Switches your current primary to Scorch Shot. Scorch Shot has a chance to light 
 (Level 2): Burn Chance increased to 66%\
 (Level 3): Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."
 FireShot.name = "Scorch Shot"; 
-FireShot.desc = "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 10 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown";
+FireShot.desc = "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown";
 FireShot.damage = 50;
 FireShot.range = 4;
 FireShot.splashDamage = 10;
 FireShot.effectChance = 33;
 FireShot.effectType = "fire";
-FireShot.effectDamage = 10;
+FireShot.effectDamage = 20;
 FireShot.effectDuration = 2;
 FireShot.displaySprite = "FirePeaIcon.PNG";
 FirePea = new CharacterPerk();
 FirePea.name = "Scorch Shot";
 FirePea.desc = "(Only usable by Rock Pea) Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns.";
-FirePea.levelstats = ["(Range: 4 tiles) (Direct Damage: 50, Fire Damage: 10) (Burn duration: 2 turns) (Burn Chance: 33%)","Burn Chance increased to 66%","Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."];
+FirePea.newdescs = ["Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Direct hit dmg: 50 ∫ Splash dmg: 10 ∫ Splash dmg radius: 3 by 3 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown"];
+FirePea.levelstats = ["(Range: 4 tiles) (Direct Damage: 50, Fire Damage: 20) (Burn duration: 2 turns) (Burn Chance: 33%)","Burn Chance increased to 66%","Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."];
 FirePea.values = [33,66,66];
 FirePea.values2 = [0,0,3];
 FirePea.newability = FireShot;
 FirePea.sprite = "FirePeaPerk.PNG";
-FirePea.plant = Peashoot;
-//characterPerks.push(FirePea);
+FirePea.plantName = "Rock Pea";
+characterPerks.push(FirePea); 
 function ApplyCharacterPerk(cp) { //haha funni child secks
     if (cp.name == "Scorch Shot") {
         cp.newability.effectChance = cp.values[cp.level-1];
         cp.newability.splashRadius = cp.values2[cp.level-1];
+        cp.newability.desc = cp.newdescs[cp.level-1];
     }
-    cp.plant.attacks[0] = cp.newability;
+    for (plant in plantArray) {
+        if (plantArray[plant].name == cp.plantName) {
+            plantArray[plant].attacks[0] = cp.newability;
+            plantArray[plant].characterperk = cp;
+        }
+    }
 
 }
-//ApplyCharacterPerk(FirePea); //*make where you actually enee to incule it
+//ApplyCharacterPerk(FirePea); 
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3213,14 +3355,14 @@ class BossWave {
         this.theme = ""; //theme to play during the boss wave
         this.background = []; //secret cone stuff
     }
-} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25
+} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 3 waves on turn 30 //*make it higher waves go!
 AllImps = new BossWave();
 AllImps.name = "Wave of Imps";
 AllImps.zombies = [Imp, ImpKing, clone(Imp), YetiImp, clone(Imp), clone(ImpKing), clone(Imp)]; 
 AllImps.image = "ImpGang.PNG";   
 AllImps.imageWidth = "25%";
 AllImps.imageLeft = "80%";
-AllImps.availablewaves = [5,10,15,20,25];
+AllImps.availablewaves = [5,10,15,20,25,30];
 for (x=4; x<10; x++) {
     for (y=0; y<5; y++) {
         AllImps.availablecoords.push([x,y]);
@@ -3270,7 +3412,7 @@ Zombotany.zombies = [Zompea,Zomnut,clone(Zompea)];
 Zombotany.image = "Zombotany.PNG";
 Zombotany.imageWidth = "40%";
 Zombotany.imageLeft = "60%";
-Zombotany.availablewaves = [5,10];
+Zombotany.availablewaves = [5,10,15];
 Zombotany.randomizecoords = true;
 for (x=5; x<10; x++) {
     for (y=0; y<5; y++) {
@@ -3285,7 +3427,7 @@ Zombotany2.zombies = [Zomgatling,Zompea,Zomnut,Zomchomp,clone(Zompea)];
 Zombotany2.image = "Zombotany.PNG";
 Zombotany2.imageWidth = "40%";
 Zombotany2.imageLeft = "60%";
-Zombotany2.availablewaves = [15,20,25];
+Zombotany2.availablewaves = [15,20,25,30];
 Zombotany2.randomizecoords = true;
 for (x=5; x<10; x++) {
     for (y=0; y<5; y++) {
@@ -3300,7 +3442,7 @@ ConeZone.zombies = [ConeCrab,Conehead,clone(ConeCrab),clone(ConeCrab),clone(Cone
 ConeZone.image = "ConeZone.PNG";
 ConeZone.imageWidth = "35%";
 ConeZone.imageLeft = "65%";
-ConeZone.availablewaves = [5,10,15,25];
+ConeZone.availablewaves = [5,10,15,25,30];
 ConeZone.randomizecoords = true;
 for (x=4; x<10; x++) {
     for (y=0; y<5; y++) {
