@@ -3013,7 +3013,7 @@ YetiChomp.values2 = [0,0,3];
 YetiChomp.newability = ArcBelch;
 YetiChomp.sprite = "YetiChomperPerk.PNG";
 YetiChomp.plantName = "Armor Chomper";
-characterPerks.push(YetiChomp);
+characterPerks.push(YetiChomp); //*add more chracter thingesi
 function ApplyCharacterPerk(cp) { //haha funni child secks
     if (cp.name == "Scorch Shot" || cp.name == "Spark Spray") {
         cp.newability.effectChance = cp.values[cp.level-1];
@@ -4392,6 +4392,9 @@ function ZombieTurn(z) {
                     if (zombie.tickTimeLeft <= 1) {
                         zombie.stunned = false;
                         zombie.understatus = false;
+                    }
+                    if (zombie.tickTimeLeft == 0) {
+                        fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
                     }
                     for (a in zombie.attacks) {
                         if (zombie.attacks[a].TimeUntilReady > 0) {
