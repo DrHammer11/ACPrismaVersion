@@ -187,7 +187,7 @@ function LoadNew() {
     MessageText.innerHTML = News;
     Message.appendChild(MessageText);
 }
-function LoadAlmanac() {
+function LoadAlmanac() { //*fix plant border thingys offset
     BackToMenu();
     OpenDesc(false);
     wc = document.getElementById("EverythingFitter");
@@ -292,7 +292,7 @@ function LoadAlmanac() {
         }
         MessageImage.style.top = ((DownCounter*25)+9-(parseInt(unlockableZombies[z].height)/4.2)).toString()+"%";
         MessageImage.style.left = ((z%ColumnCount*12)+4-(unlockableZombies[z].wb-1)*4).toString()+"%";
-        MessageImage.style.height = (parseInt(unlockableZombies[z].height)*4).toString()+"px"
+        MessageImage.style.height = (parseInt(unlockableZombies[z].height)/1.75).toString()+"%";
         Message.appendChild(MessageImage);
 
         MessageImage = document.createElement("img");
@@ -1332,7 +1332,11 @@ function LoadGame() {
         if (ZombieArray[z].tickgiver != "") {
             if (ZombieArray[z].tickgiver.effectType == "fire") {
                 zombi.style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
-            }   
+            } 
+            else if (ZombieArray[z].tickgiver.effectType == "goop poison") {
+                zombi.style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
+            }
+            
         }
         wc.appendChild(zombi);
         fighterPhysArray.push(zombi);
@@ -1876,19 +1880,29 @@ function ChooseAPerk(chosenPerks=[]) {
     MessageText.innerHTML = "CHOOSE A PERK!";
     Message.appendChild(MessageText); 
     choosablePerks = passivePerks.concat(characterPerks);
-    for (perk in choosablePerks) { 
-        perk = choosablePerks[perk];
+    offset = 0;
+    willoffset = false;
+    for (p=0; p<choosablePerks.length+offset; ) { 
+        p = p-offset;
+        perk = choosablePerks[p];
         index = currentPlant.passiveperks.indexOf(perk);
         if (index > -1) {
             choosablePerks.splice(index, 1);
+            willoffset = true;
         }
         if (characterPerks.includes(perk)) {
-            if (perk.plantName != currentPlant.name || currentPlant.characterperk == perk) {
+            if (perk.plantName != currentPlant.name || currentPlant.characterperk.name == perk.name) {
                 index = choosablePerks.indexOf(perk);
                 if (index > -1) {
                     choosablePerks.splice(index, 1);
+                    willoffset = true;
                 }
             }
+        }
+        p += 1+offset;
+        if (willoffset) {
+            willoffset = false;
+            offset += 1;
         }
     }
     for (p=0; chosenPerks.length<3; p++) { 
@@ -2098,9 +2112,8 @@ function ViewPerk(perk, chosenPerks) {
         if (currentPlant.passiveperks.includes(perk)) {
             ResetPerks();
             index = currentPlant.passiveperks.indexOf(perk);
-            if (index > -1) {
-                currentPlant.passiveperks.splice(index, 1);
-            }
+            currentPlant.passiveperks.splice(index, 1);
+            perk.level = 1;
             UpdatePassivePerks("onetime");
             SaveGame();
             document.getElementById("ViewingPerk").remove();
@@ -2109,12 +2122,13 @@ function ViewPerk(perk, chosenPerks) {
         }
         else {
             currentPlant.characterperk = "";
+            perk.level = 1;
             SaveGame();
             if (currentPlant.name == "Rock Pea") {
                 plantArray[plant].attacks[0] = Rock;
             }
             else if (currentPlant.name == "Armor Chomper") {
-                plantArray[plant].attacks[0] = Rock;
+                plantArray[plant].attacks[0] = Chomp;
             }
             document.getElementById("ViewingPerk").remove();
             document.getElementById("UpgradePerk").remove();
@@ -2392,11 +2406,13 @@ function UpdateTurnCount() {
 }
 function UpdateTicks() { 
     offset = 0; 
+    willoffset = false;
     for (z=0; z<ZombieArray.length+offset; ) { 
         z = z-offset;
+        console.log(z)
         zombie = ZombieArray[z];
         if (zombie.tickgiver != "") {
-            CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.")
+            CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.") 
             zombie.health -= Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult);
             UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult));
             if (zombie.health <= 0) {
@@ -2404,15 +2420,20 @@ function UpdateTicks() {
                 RemoveZombie(zombie); 
                 zombiedead = true;
                 CheckForWin();
-                offset += 1;
+                willoffset = true;
             }
             zombie.tickTimeLeft -= 1;
-            if (zombie.tickTimeLeft == 0 && zombie.health > 0) {
+            if (zombie.tickTimeLeft <= 0 && zombie.health > 0) {
                 fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
-                zombie.tickgiver == "";
+                zombie.tickgiver = "";
+                console.log("nooo more tick damage")
             }
         }
-        z += 1+offset
+        z += 1+offset;
+        if (willoffset) {
+            willoffset = false;
+            offset += 1;
+        }
     }
     updategrid();
 }
@@ -2436,11 +2457,28 @@ function ApplyEffects(Fighter1,Fighter2,attack) {
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
         Fighter2.stunned = true;
     }
+    if (attack.effectType == "goop poison") {
+        if (attack.effectDuration > 1) {
+            CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for two turns.") 
+        }
+        else {
+            CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for one turn.") 
+        }
+        fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
+        Fighter2.stunned = true;
+        Fighter2.tickgiver = attack;
+        Fighter2.tickTimeLeft = attack.effectDuration;
+    }
     if (attack.effectType == "fire") {
         CreateConsoleText(Fighter1.name+" has lit "+Fighter2.name+" on fire for two turns.") 
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
         Fighter2.tickgiver = attack;
         Fighter2.tickTimeLeft = attack.effectDuration;
+    }
+    if (attack.effectType == "electrocute") {
+        CreateConsoleText(Fighter1.name+" has electrocuted "+Fighter2.name+" for one turn.") 
+        fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(0,0,0)) drop-shadow(0 0 0 rgb(0,0,0)) drop-shadow(0 0 0 rgb(0,0,0)) saturate(225%)";
+        Fighter2.stunned = true;
     }
     Fighter2.understatus = true;
 }
@@ -2652,9 +2690,9 @@ passivePerks.push(SuckHeal);
 ColdResist = new PassivePerk();
 ColdResist.name = "Ice Guard";
 ColdResist.desc = "Grants immunity to being frozen.";
-ColdResist.levelstats = ["Immunity to being frozen.","Ice and Cold based attacks do no damage.","All attacks that don't currently apply an effect have an added 15% chance to freeze zombies."]
+ColdResist.levelstats = ["Immunity to being frozen.","Ice and Cold based attacks do no damage.","All attacks that don't currently apply an effect have an added 25% chance to freeze zombies."]
 ColdResist.values = [1,0,0];
-ColdResist.values2 = [0,0,15];
+ColdResist.values2 = [0,0,25];
 ColdResist.updaterate = "onetime";
 ColdResist.type = "iceimmunity";
 ColdResist.sprite = "IceGuard.PNG"
@@ -2826,7 +2864,7 @@ AC.permhealth = 225;
 AC.powerLevel = 9001;
 AC.height = "30%";
 AC.chewingtime = 0;
-AC.attacks.push(Goop,Chomp,Seed,Swallow); 
+AC.attacks.push(Chomp,Swallow,Goop,Seed); //*add primary thingies
 AC.aliveSprite = "ArmorChomper.PNG";
 AC.iconSprite = "PlantLeft.PNG";
 //peashitter
@@ -2861,13 +2899,13 @@ Peashoot.permhealth = 150;
 Peashoot.powerLevel = 9001;
 Peashoot.height = "26%";
 Peashoot.chewingtime = 0;
-Peashoot.attacks.push(Pea,Gatling,Bean);
+Peashoot.attacks.push(Pea,Gatling,Bean); 
 //Peashoot.passiveperks.push(SuckHeal,BumpAttack,ColdResist);
 Peashoot.aliveSprite = "RockPea.PNG";
 Peashoot.iconSprite = "PlantRight.PNG";
 currentPlant = Peashoot;
 plantArray = [AC,Peashoot];
-class CharacterPerk {//*add character perks
+class CharacterPerk {
     constructor() {
         this.name = "";  
         this.desc = "";  
@@ -2883,12 +2921,8 @@ class CharacterPerk {//*add character perks
 }
 characterPerks = [];
 FireShot = new AttackType();
-"Scorch Shot (Primary) (Usable by Rock Pea)\
-Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns. (Range: 4 tiles) (Direct Damage: 50, DoT: 10) (Burn duration: 2 turns) (Burn Chance: 33%)\
-(Level 2): Burn Chance increased to 66%\
-(Level 3): Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."
 FireShot.name = "Scorch Shot"; 
-FireShot.desc = "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown";
+FireShot.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
 FireShot.damage = 50;
 FireShot.range = 4;
 FireShot.splashDamage = 10;
@@ -2910,21 +2944,101 @@ FirePea.newability = FireShot;
 FirePea.sprite = "FirePeaPerk.PNG";
 FirePea.plantName = "Rock Pea";
 characterPerks.push(FirePea); 
+SludShot = new AttackType();
+SludShot.name = "Sludgy Shot"; 
+SludShot.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
+SludShot.damage = 50;
+SludShot.range = 4;
+SludShot.effectChance = 25;
+SludShot.effectType = "goop poison";
+SludShot.effectDamage = 25;
+SludShot.effectDuration = 1;
+SludShot.displaySprite = "SludgePeaIcon.PNG";
+SludgePea = new CharacterPerk();
+SludgePea.name = "Sludgy Shot";
+SludgePea.desc = "(Only usable by Rock Pea) Switches your current primary to Sludgy Shot. Sludgy Shot has a chance to \"Poison Goop\" Zombies, stunning them for 1 turn, and dealing damage to affected Zombies at the start of their turns.";
+SludgePea.newdescs = ["Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 25% ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 2 turns ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown"];
+SludgePea.levelstats = ["(Range: 4 tiles) (Damage: 50, DoT: 25) (Goop Chance: 25%) (DoT Duration: 1 turn)","Increase Goop chance to 50%.","Increase DoT Duration and Stun Duration to 2 turns."];
+SludgePea.values = [25,50,50];
+SludgePea.values2 = [1,1,2];
+SludgePea.newability = SludShot;
+SludgePea.sprite = "SludgePeaPerk.PNG";
+SludgePea.plantName = "Rock Pea";
+characterPerks.push(SludgePea); 
+SparkSpray = new AttackType();
+SparkSpray.name = "Spark Spray"; 
+SparkSpray.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
+SparkSpray.damage = 75;
+SparkSpray.range = 2;
+SparkSpray.splashDamage = 15;
+SparkSpray.splashRadius = 3;
+SparkSpray.effectChance = 0;
+SparkSpray.effectType = "electrocute";
+SparkSpray.effectDuration = 1;
+SparkSpray.displaySprite = "PowerChomperIcon.PNG";
+PowerChomp = new CharacterPerk();
+PowerChomp.name = "Spark Spray";
+PowerChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Spark Spray. Spark Spray has a longer range, and will hit zombies near the first one it hits.";
+PowerChomp.newdescs = ["Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Range: 2 spaces ∫ No cooldown",
+"Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown",
+"Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 25 ∫ Arc Radius: 5 by 5 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown"];
+PowerChomp.levelstats = ["(Spray Range: 2 tiles, 3x3 radius) (Spray Direct Damage: 75, Splash: 15)","Gain a 10% chance to \"electrocute\" zombies, stunning them for one turn when dealing damage with Spark Spray.","Splash radius increased to 5x5, Arc damage increased to 25."];
+PowerChomp.values = [0,11,11];
+PowerChomp.values2 = [3,3,5];
+PowerChomp.values3 = [15,15,25];
+PowerChomp.newability = SparkSpray;
+PowerChomp.sprite = "PowerChomperPerk.PNG";
+PowerChomp.plantName = "Armor Chomper";
+characterPerks.push(PowerChomp); 
+ArcBelch = new AttackType();
+ArcBelch.name = "Arctic Belch"; 
+ArcBelch.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
+ArcBelch.damage = 50;
+ArcBelch.range = 4;
+ArcBelch.splashDamage = 25;
+ArcBelch.effectChance = 33;
+ArcBelch.effectType = "frozen";
+ArcBelch.displaySprite = "YetiChomperIcon.PNG";
+YetiChomp = new CharacterPerk();
+YetiChomp.name = "Arctic Belch";
+YetiChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Arctic Belch. Arctic Belch has a longer range, and can freeze Zombies.";
+YetiChomp.newdescs = ["Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
+"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown",
+"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Direct hit dmg: 50 ∫ Splash dmg: 25 ∫ Splash dmg radius: 3 by 3 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown"];
+YetiChomp.levelstats = ["(Belch Range: 4 tiles) (Damage: 50) (Freeze Chance: 33%)","Range increased to 6 tiles.","Arctic Belch gains 3x3 splash, hitting for 25 damage and can freeze."];
+YetiChomp.values = [4,6,6];
+YetiChomp.values2 = [0,0,3];
+YetiChomp.newability = ArcBelch;
+YetiChomp.sprite = "YetiChomperPerk.PNG";
+YetiChomp.plantName = "Armor Chomper";
+characterPerks.push(YetiChomp);
 function ApplyCharacterPerk(cp) { //haha funni child secks
-    if (cp.name == "Scorch Shot") {
+    if (cp.name == "Scorch Shot" || cp.name == "Spark Spray") {
         cp.newability.effectChance = cp.values[cp.level-1];
         cp.newability.splashRadius = cp.values2[cp.level-1];
-        cp.newability.desc = cp.newdescs[cp.level-1];
     }
+    if (cp.name == "Spark Spray") {
+        cp.newability.splashDamage = cp.values3[cp.level-1];
+    }
+    if (cp.name == "Arctic Belch") {
+        cp.newability.range = cp.values[cp.level-1];
+        cp.newability.splashRadius = cp.values2[cp.level-1];
+    }
+    if (cp.name == "Sludgy Shot") {
+        cp.newability.effectChance = cp.values[cp.level-1];
+        cp.newability.effectDuration = cp.values2[cp.level-1];
+    }
+    cp.newability.desc = cp.newdescs[cp.level-1];
     for (plant in plantArray) {
         if (plantArray[plant].name == cp.plantName) {
             plantArray[plant].attacks[0] = cp.newability;
             plantArray[plant].characterperk = cp;
         }
     }
-
 }
-//ApplyCharacterPerk(FirePea); 
+//ApplyCharacterPerk(SludgePea);
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3382,6 +3496,7 @@ Garg.availablewaves = [10];
 Garg.availablecoords = [[5,2],[6,2],[7,2],[8,2]];
 Garg.randomizecoords = true;
 Garg.theme = "GargTheme.mp3"; 
+Garg.background = ["ArenaTile.PNG","ArenaBackground.PNG"];
 BossWaves.push(Garg);
 Gargs = new BossWave();
 Gargs.name = "One Big Bad Zombie";
@@ -3393,6 +3508,7 @@ Gargs.availablewaves = [20];
 Gargs.availablecoords = [[5,2],[6,2],[7,2],[8,2]];
 Gargs.randomizecoords = true;
 Gargs.theme = "GigaGargTheme.mp3"; 
+Gargs.background = ["ArenaTile.PNG","ArenaBackground.PNG"];
 BossWaves.push(Gargs);
 Graves = new BossWave();
 Graves.name = "Grave Danger";
@@ -3420,6 +3536,7 @@ for (x=5; x<10; x++) {
     }
 }
 Zombotany.theme = "ZombotanyTheme.mp3";
+Zombotany.background = ["MutantTile.PNG","RegBackground.PNG"];
 BossWaves.push(Zombotany);
 Zombotany2 = new BossWave();
 Zombotany2.name = "Zombotany!";
@@ -3435,6 +3552,7 @@ for (x=5; x<10; x++) {
     }
 }
 Zombotany2.theme = "ZombotanyTheme.mp3";
+Zombotany2.background = ["MutantTile.PNG","RegBackground.PNG"];
 BossWaves.push(Zombotany2);
 ConeZone = new BossWave();
 ConeZone.name = "The Cone Zone";
@@ -4271,8 +4389,10 @@ function ZombieTurn(z) {
             setTimeout(function() {
                 if (zombie.stunned) {
                     CreateConsoleText(zombie.name+" did not do anything as they are stunned.")
-                    zombie.stunned = false;
-                    zombie.understatus = false;
+                    if (zombie.tickTimeLeft <= 1) {
+                        zombie.stunned = false;
+                        zombie.understatus = false;
+                    }
                     for (a in zombie.attacks) {
                         if (zombie.attacks[a].TimeUntilReady > 0) {
                             zombie.attacks[a].TimeUntilReady -= 1;
@@ -4283,7 +4403,6 @@ function ZombieTurn(z) {
                             zombie.supports[s].TimeUntilReady -= 1;
                         }
                     }
-                    fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
                     setTimeout(function() {
                         CreateConsoleText(zombie.name+" has ended their turn.")
                         if (z == ZombieArray.length-1) {
@@ -4299,6 +4418,8 @@ function ZombieTurn(z) {
                                             }
                                         }
                                         currentPlant.understatus = false;
+                                        UpdateTicks();
+                                        UpdatePassivePerks("everyturn");
                                         ZombieTurn(0);
                                         if (currentPlant.chewing) {
                                             currentPlant.aliveSprite = "chewy.gif";
@@ -4431,6 +4552,8 @@ function ZombieTurn(z) {
                                                 }
                                             }
                                             currentPlant.understatus = false;
+                                            UpdateTicks();
+                                            UpdatePassivePerks("everyturn");
                                             ZombieTurn(0);
                                             if (currentPlant.chewing) {
                                                 currentPlant.aliveSprite = "chewy.gif";
