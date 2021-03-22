@@ -716,7 +716,7 @@ function StartGame() {
     zhealtharray = [];
     zhealthbararray = [];
     currentPlant.coords = [2,2];
-    difficultylevel = 5;
+    difficultylevel = 1;
     StopTurn = false;
     planthealth.innerHTML = Object.assign(currentPlant.permhealth);
     currentPlant.health = Object.assign(currentPlant.permhealth);
