@@ -716,7 +716,7 @@ function StartGame() {
     zhealtharray = [];
     zhealthbararray = [];
     currentPlant.coords = [2,2];
-    difficultylevel = 1;
+    difficultylevel = 5;
     StopTurn = false;
     planthealth.innerHTML = Object.assign(currentPlant.permhealth);
     currentPlant.health = Object.assign(currentPlant.permhealth);
@@ -2124,11 +2124,8 @@ function ViewPerk(perk, chosenPerks) {
             currentPlant.characterperk = "";
             perk.level = 1;
             SaveGame();
-            if (currentPlant.name == "Rock Pea") {
-                plantArray[plant].attacks[0] = Rock;
-            }
-            else if (currentPlant.name == "Armor Chomper") {
-                plantArray[plant].attacks[0] = Chomp;
+            for (p in currentPlant.primaries) {
+                currentPlant.attacks[p] = currentPlant.primaries[p];
             }
             document.getElementById("ViewingPerk").remove();
             document.getElementById("UpgradePerk").remove();
@@ -2409,7 +2406,6 @@ function UpdateTicks() {
     willoffset = false;
     for (z=0; z<ZombieArray.length+offset; ) { 
         z = z-offset;
-        console.log(z)
         zombie = ZombieArray[z];
         if (zombie.tickgiver != "") {
             CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.") 
@@ -2426,7 +2422,6 @@ function UpdateTicks() {
             if (zombie.tickTimeLeft <= 0 && zombie.health > 0) {
                 fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
                 zombie.tickgiver = "";
-                console.log("nooo more tick damage")
             }
         }
         z += 1+offset;
@@ -2865,6 +2860,7 @@ AC.powerLevel = 9001;
 AC.height = "30%";
 AC.chewingtime = 0;
 AC.attacks.push(Chomp,Swallow,Goop,Seed); //*add primary thingies
+AC.primaries = [Chomp,Swallow];
 AC.aliveSprite = "ArmorChomper.PNG";
 AC.iconSprite = "PlantLeft.PNG";
 //peashitter
@@ -2900,6 +2896,7 @@ Peashoot.powerLevel = 9001;
 Peashoot.height = "26%";
 Peashoot.chewingtime = 0;
 Peashoot.attacks.push(Pea,Gatling,Bean); 
+Peashoot.primaries = [Pea];
 //Peashoot.passiveperks.push(SuckHeal,BumpAttack,ColdResist);
 Peashoot.aliveSprite = "RockPea.PNG";
 Peashoot.iconSprite = "PlantRight.PNG";
@@ -2934,13 +2931,13 @@ FireShot.displaySprite = "FirePeaIcon.PNG";
 FirePea = new CharacterPerk();
 FirePea.name = "Scorch Shot";
 FirePea.desc = "(Only usable by Rock Pea) Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns.";
-FirePea.newdescs = ["Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
+FirePea.newdescs = [["Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
 "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown",
-"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Direct hit dmg: 50 ∫ Splash dmg: 10 ∫ Splash dmg radius: 3 by 3 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown"];
+"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Direct hit dmg: 50 ∫ Splash dmg: 10 ∫ Splash dmg radius: 3 by 3 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown"]];
 FirePea.levelstats = ["(Range: 4 tiles) (Direct Damage: 50, Fire Damage: 20) (Burn duration: 2 turns) (Burn Chance: 33%)","Burn Chance increased to 66%","Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."];
 FirePea.values = [33,66,66];
 FirePea.values2 = [0,0,3];
-FirePea.newability = FireShot;
+FirePea.newabilities = [FireShot];
 FirePea.sprite = "FirePeaPerk.PNG";
 FirePea.plantName = "Rock Pea";
 characterPerks.push(FirePea); 
@@ -2957,13 +2954,13 @@ SludShot.displaySprite = "SludgePeaIcon.PNG";
 SludgePea = new CharacterPerk();
 SludgePea.name = "Sludgy Shot";
 SludgePea.desc = "(Only usable by Rock Pea) Switches your current primary to Sludgy Shot. Sludgy Shot has a chance to \"Poison Goop\" Zombies, stunning them for 1 turn, and dealing damage to affected Zombies at the start of their turns.";
-SludgePea.newdescs = ["Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 25% ∫ Range: 4 spaces ∫ No cooldown",
+SludgePea.newdescs = [["Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 25% ∫ Range: 4 spaces ∫ No cooldown",
 "Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown",
-"Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 2 turns ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown"];
+"Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 2 turns ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown"]];
 SludgePea.levelstats = ["(Range: 4 tiles) (Damage: 50, DoT: 25) (Goop Chance: 25%) (DoT Duration: 1 turn)","Increase Goop chance to 50%.","Increase DoT Duration and Stun Duration to 2 turns."];
 SludgePea.values = [25,50,50];
 SludgePea.values2 = [1,1,2];
-SludgePea.newability = SludShot;
+SludgePea.newabilities = [SludShot];
 SludgePea.sprite = "SludgePeaPerk.PNG";
 SludgePea.plantName = "Rock Pea";
 characterPerks.push(SludgePea); 
@@ -2981,14 +2978,14 @@ SparkSpray.displaySprite = "PowerChomperIcon.PNG";
 PowerChomp = new CharacterPerk();
 PowerChomp.name = "Spark Spray";
 PowerChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Spark Spray. Spark Spray has a longer range, and will hit zombies near the first one it hits.";
-PowerChomp.newdescs = ["Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Range: 2 spaces ∫ No cooldown",
+PowerChomp.newdescs = [["Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Range: 2 spaces ∫ No cooldown",
 "Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown",
-"Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 25 ∫ Arc Radius: 5 by 5 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown"];
+"Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 25 ∫ Arc Radius: 5 by 5 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown"]];
 PowerChomp.levelstats = ["(Spray Range: 2 tiles, 3x3 radius) (Spray Direct Damage: 75, Splash: 15)","Gain a 10% chance to \"electrocute\" zombies, stunning them for one turn when dealing damage with Spark Spray.","Splash radius increased to 5x5, Arc damage increased to 25."];
 PowerChomp.values = [0,11,11];
 PowerChomp.values2 = [3,3,5];
 PowerChomp.values3 = [15,15,25];
-PowerChomp.newability = SparkSpray;
+PowerChomp.newabilities = [SparkSpray,Swallow];
 PowerChomp.sprite = "PowerChomperPerk.PNG";
 PowerChomp.plantName = "Armor Chomper";
 characterPerks.push(PowerChomp); 
@@ -3004,13 +3001,13 @@ ArcBelch.displaySprite = "YetiChomperIcon.PNG";
 YetiChomp = new CharacterPerk();
 YetiChomp.name = "Arctic Belch";
 YetiChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Arctic Belch. Arctic Belch has a longer range, and can freeze Zombies.";
-YetiChomp.newdescs = ["Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
+YetiChomp.newdescs = [["Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
 "Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown",
-"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Direct hit dmg: 50 ∫ Splash dmg: 25 ∫ Splash dmg radius: 3 by 3 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown"];
+"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Direct hit dmg: 50 ∫ Splash dmg: 25 ∫ Splash dmg radius: 3 by 3 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown"]];
 YetiChomp.levelstats = ["(Belch Range: 4 tiles) (Damage: 50) (Freeze Chance: 33%)","Range increased to 6 tiles.","Arctic Belch gains 3x3 splash, hitting for 25 damage and can freeze."];
 YetiChomp.values = [4,6,6];
 YetiChomp.values2 = [0,0,3];
-YetiChomp.newability = ArcBelch;
+YetiChomp.newabilities = [ArcBelch,Swallow];
 YetiChomp.sprite = "YetiChomperPerk.PNG";
 YetiChomp.plantName = "Armor Chomper";
 characterPerks.push(YetiChomp); //*add more chracter thingesi
@@ -3030,13 +3027,16 @@ function ApplyCharacterPerk(cp) { //haha funni child secks
         cp.newability.effectChance = cp.values[cp.level-1];
         cp.newability.effectDuration = cp.values2[cp.level-1];
     }
-    cp.newability.desc = cp.newdescs[cp.level-1];
-    for (plant in plantArray) {
-        if (plantArray[plant].name == cp.plantName) {
-            plantArray[plant].attacks[0] = cp.newability;
-            plantArray[plant].characterperk = cp;
+    for (p in currentPlant.primaries) {
+        currentPlant.attacks[p] = cp.newabilities[p];
+    }
+    for (ab in cp.newabilities) {
+        if (ab < cp.newdescs.length) {
+            currentPlant.attacks[ab].desc = cp.newdescs[ab][cp.level-1];
         }
     }
+    currentPlant.characterperk = cp;
+    SaveGame();
 }
 //ApplyCharacterPerk(SludgePea);
 //zombie attacks 
