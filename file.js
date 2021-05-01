@@ -108,9 +108,9 @@ if (SettingData == null) {
 currentVolume = SettingData[0];
 turntime = (18.5*SettingData[1])+150;
 SoundArray = [loss, win, Ultwin, LogoSound, FightSound, ZombieTurnTheme, PlantTurnTheme, MenuTheme, AlmanacTheme, PerkTheme];
-News = "This is special prisma version, you get to try stuff out before others<br><br> \
+News = "Yoooo new update?? Epic epic cool (you've probably already noticed some of the new features)<br><br>\
 New features:<br>\
-A perks system! Now after you beat a boss wave, you get to choose a perk to equip. This perk will change your primary or grant a buff to increase your overall strength so that you can survive even longer.<br>\
+A perks system! Now after you beat a boss wave, you get to choose a perk to equip. This perk will change your primary, gain you a new ability, or grant a buff to increase your overall strength so that you can survive even longer.<br>\
 Epic cool backgrounds and colours to stimulate your brain via visual input.<br>\
 Added an almanac! Now you can view the descriptions and abilities of all the plants and zombies in the game that you have encountered.<br>\
 Peashooter is now Rock Pea.<br>\
@@ -124,7 +124,7 @@ Fixed bug where zombies wouldn’t use their ranged attack if they were within r
 Fixed bug where you could give yourself infinite health.<br>\
 <br>\
 Balance changes:<br>\
-RNG has been completely removed from your abilities: your abilities will now always hit! Zombies can still miss though.<br>\
+All of your abilities now have a 100% chance to hit, zombies can still miss though.<br>\
 Cone Crabs can now duplicate sooner.<br>\
 Coneoisseur’s melee attack is now stronger.<br>";
 function RemoveBlocker() {
@@ -180,14 +180,14 @@ function LoadNew() {
     Message.appendChild(CloseButton);
     MessageHeader = document.createElement("p");
     MessageHeader.className = "MessageHeader";
-    MessageHeader.innerHTML = "What's new in Version ???";
+    MessageHeader.innerHTML = "What's new in Version 1.9.0";
     Message.appendChild(MessageHeader);
     MessageText = document.createElement("p");
     MessageText.className = "MessageText";
     MessageText.innerHTML = News;
     Message.appendChild(MessageText);
 }
-function LoadAlmanac() { //*fix plant border thingys offset
+function LoadAlmanac() {
     BackToMenu();
     OpenDesc(false);
     wc = document.getElementById("EverythingFitter");
@@ -217,7 +217,7 @@ function LoadAlmanac() { //*fix plant border thingys offset
     Message.appendChild(MessageHeader);
     MessageText = document.createElement("p");
     MessageText.className = "MessageHeader";
-    MessageText.innerHTML = "PLANTS";
+    MessageText.innerHTML = "PLANTS<br><br><br><br><br><br>";
     Message.appendChild(MessageText);
     ColumnCount = 5;
     DownCounter = 1;
@@ -230,22 +230,23 @@ function LoadAlmanac() { //*fix plant border thingys offset
         MessageImage.src = "Lawn.PNG";
         MessageImage.id = plantArray[p].name;
         MessageImage.onclick = OpenDesc;
-        MessageImage.style.top = (DownCounter*20).toString()+"%";
-        MessageImage.style.left = ((p+1)%ColumnCount*0).toString()+"%";
-        Message.appendChild(MessageImage)
+        MessageImage.style.top = (DownCounter*13).toString()+"%";
+        MessageImage.style.left = ((p%ColumnCount*12)+2).toString()+"%";
+        Message.appendChild(MessageImage);
 
         MessageImage = document.createElement("img");
         MessageImage.className = "PlantImgAlmanac";
         MessageImage.src = plantArray[p].aliveSprite;
-        MessageImage.style.top = (DownCounter*20).toString()+"%";
-        MessageImage.style.left = "-10%";
+        MessageImage.style.top = ((DownCounter*13)+9-(parseInt(plantArray[p].height)/3)).toString()+"%";
+        MessageImage.style.left = ((p%ColumnCount*12)+4-(plantArray[p].wb-1)*4).toString()+"%";
+        MessageImage.style.height = (parseInt(plantArray[p].height)/1.55).toString()+"%";
         Message.appendChild(MessageImage);
 
         MessageImage = document.createElement("img");
         MessageImage.className = "AlmanacFrame";
         MessageImage.src = "AlmanacFrame.PNG";
-        MessageImage.style.top = (DownCounter*11).toString()+"%";
-        MessageImage.style.left = ((p%ColumnCount*14)-1).toString()+"%";
+        MessageImage.style.top = ((DownCounter*13)-4.6).toString()+"%";
+        MessageImage.style.left = ((p%ColumnCount*12)-0.2).toString()+"%";
         Message.appendChild(MessageImage)
     }
     DownCounter = 1.5;
@@ -439,7 +440,7 @@ function BackToMenu() {
     wc.appendChild(MenuBackground);
     vc = document.createElement("div");
     vc.id="VersionCount";
-    vc.innerHTML="Beta Version ???";
+    vc.innerHTML="Beta Version 1.9.0";
     wc.appendChild(vc);
     tc = document.createElement("div");
     tc.id="TitleContainer";
@@ -544,6 +545,90 @@ function ChoosePlant() {
         MessageImage.style.width = "25%";
     }
 }
+function LoadAttackButtons() {
+    for (a in currentPlant.attacks) {
+        currentPlant.attacks[a].TimeUntilReady = 0;
+        atak = currentPlant.attacks[a];
+        attackbutton = document.createElement("button");
+        attackbutton.className = "AbilityButton";
+        attackbutton.innerHTML = atak.name;
+        attackbutton.id = atak.name;
+        abilitybuttons.appendChild(attackbutton);
+        attackbutton.onclick = function(event) {
+            for (a in currentPlant.attacks) {
+                if (event.target.id == currentPlant.attacks[a].name) {
+                    attack = currentPlant.attacks[a];
+                }
+            }
+            currentProjectile = attack;
+            CD = 0;
+            if (attack.range == "board") {
+                CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[]);
+            }
+            else if (attack.type != undefined) {
+                CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[["Use",function() {
+                    FireSupport(attack);
+                }]]);
+            }
+            else {
+                CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[["Use",FireProjectile],["Rotate Attack",SwitchAD]]);
+                for (is in phygriditems) {
+                    phygriditems[is].remove();
+                }
+                phygriditems = [];
+                griditemarray = [];
+                currentx = 0;
+                currenty = 0;
+                fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
+                for (i = 0; i < gridx*gridy; i++) {
+                    currentx += 1;
+                    ItemSprite = document.createElement("img");
+                    newgi = new griditem();
+                    newgi.codx = currentx;
+                    newgi.cody = currenty;
+                    newgi.sprite = "BlankTile.PNG"
+                    griditemarray.push(newgi);
+                    ItemSprite.src = "BlankTile.PNG";
+                    wc.appendChild(ItemSprite);
+                    ItemSprite.style.position = "absolute";
+                    ItemSprite.className = "gridTile";
+                    ItemSprite.onclick = tryToMove;
+                    ItemSprite.style.height = (8*gridsize).toString()+"%";
+                    ItemSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
+                    ItemSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
+                    for (f in fighterArray) {
+                        fighter = fighterArray[f];
+                        if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && fighter.plant) {
+                            newgi.sprite = "GreenTile.PNG"
+                            newgi.character = fighter;
+                            ItemSprite.src = "GreenTile.PNG";
+                        }
+                        if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && !(fighter.plant)) {
+                            newgi.sprite = "PurpleTile.PNG"
+                            newgi.character = fighter;
+                            ItemSprite.src = "PurpleTile.PNG";
+                        }
+                    }
+                    if((currentPlant.coords[0]+1 <= currentx && currentx <= currentPlant.coords[0]+attack.range) && currenty === currentPlant.coords[1]) { 
+                        if (newgi.sprite == "PurpleTile.PNG") {
+                            newgi.sprite = "RedTile.PNG";
+                            ItemSprite.src = "RedTile.PNG";
+                        }
+                        else {
+                            newgi.sprite = "BlueTile.PNG";
+                            ItemSprite.src = "BlueTile.PNG"; 
+                        }
+                    }
+                    phygriditems.push(ItemSprite);
+                    if (currentx%gridx == 0) {
+                        currenty += 1;
+                        currentx = 0;
+                    }
+                }
+            }
+        }
+    }
+}
 function StartGame() { 
     for (theme in SoundArray) {
         theme = SoundArray[theme];
@@ -616,78 +701,7 @@ function StartGame() {
     turncounter = document.getElementById("TurnCounter");
     abilitybuttons = document.getElementById("AbilityButtons");
     planthealth = document.getElementById("HealthAmount");
-    for (a in currentPlant.attacks) {
-        currentPlant.attacks[a].TimeUntilReady = 0;
-        atak = currentPlant.attacks[a];
-        attackbutton = document.createElement("button");
-        attackbutton.className = "AbilityButton";
-        attackbutton.innerHTML = atak.name;
-        attackbutton.id = atak.name;
-        abilitybuttons.appendChild(attackbutton);
-        attackbutton.onclick = function(event) {
-            for (a in currentPlant.attacks) {
-                if (event.target.id == currentPlant.attacks[a].name) {
-                    attack = currentPlant.attacks[a];
-                }
-            }
-            currentProjectile = attack;
-            CD = 0;
-            CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[["Use",FireProjectile],["Rotate Attack",SwitchAD]]);
-            for (is in phygriditems) {
-                phygriditems[is].remove();
-            }
-            phygriditems = [];
-            griditemarray = [];
-            currentx = 0;
-            currenty = 0;
-            fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
-            for (i = 0; i < gridx*gridy; i++) {
-                currentx += 1;
-                ItemSprite = document.createElement("img");
-                newgi = new griditem();
-                newgi.codx = currentx;
-                newgi.cody = currenty;
-                newgi.sprite = "BlankTile.PNG"
-                griditemarray.push(newgi);
-                ItemSprite.src = "BlankTile.PNG";
-                wc.appendChild(ItemSprite);
-                ItemSprite.style.position = "absolute";
-                ItemSprite.className = "gridTile";
-                ItemSprite.onclick = tryToMove;
-                ItemSprite.style.height = (8*gridsize).toString()+"%";
-                ItemSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
-                ItemSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
-                for (f in fighterArray) {
-                    fighter = fighterArray[f];
-                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && fighter.plant) {
-                        newgi.sprite = "GreenTile.PNG"
-                        newgi.character = fighter;
-                        ItemSprite.src = "GreenTile.PNG";
-                    }
-                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && !(fighter.plant)) {
-                        newgi.sprite = "PurpleTile.PNG"
-                        newgi.character = fighter;
-                        ItemSprite.src = "PurpleTile.PNG";
-                    }
-                }
-                if((currentPlant.coords[0]+1 <= currentx && currentx <= currentPlant.coords[0]+attack.range) && currenty === currentPlant.coords[1]) {
-                    if (newgi.sprite == "PurpleTile.PNG") {
-                        newgi.sprite = "RedTile.PNG";
-                        ItemSprite.src = "RedTile.PNG";
-                    }
-                    else {
-                        newgi.sprite = "BlueTile.PNG";
-                        ItemSprite.src = "BlueTile.PNG"; 
-                    }
-                }
-                phygriditems.push(ItemSprite);
-                if (currentx%gridx == 0) {
-                    currenty += 1;
-                    currentx = 0;
-                }
-            }
-        }
-    }
+    LoadAttackButtons();
     turnbutton.onclick = function() {
         turncounter.innerHTML = "Zombie's Turn";
         abilitybuttons.style.display = "none";
@@ -834,6 +848,67 @@ function CreateModal(modalID,modalheader,modaltext,modalimage,modalbuttons) { //
                 Message.appendChild(MessageButton);
             }
         }
+        if (modalbuttons.length == 0) {
+            if (currentProjectile.TimeUntilReady > 0) {
+                MessageText = document.createElement("p");
+                MessageText.className = "MessageText";
+                MessageText.style.display = "block";
+                if (currentProjectile.TimeUntilReady == currentProjectile.reloadTime+1) {
+                    MessageText.innerHTML = "You've just used this ability.";
+                }
+                else {
+                    MessageText.innerHTML = "This ability will be ready in "+currentProjectile.TimeUntilReady+" turn(s).";
+                }
+                Message.appendChild(MessageText);
+            }
+            for (is in phygriditems) {
+                phygriditems[is].remove();
+            }
+            phygriditems = [];
+            griditemarray = [];
+            currentx = 0;
+            currenty = 0;
+            for (i = 0; i < gridx*gridy; i++) {
+                currentx += 1;
+                ItemSprite = document.createElement("img");
+                newgi = new griditem();
+                newgi.codx = currentx;
+                newgi.cody = currenty;
+                newgi.sprite = "BlankTile.PNG"
+                griditemarray.push(newgi);
+                ItemSprite.src = "BlankTile.PNG";
+                wc.appendChild(ItemSprite);
+                ItemSprite.className = "gridTileAttack";
+                ItemSprite.onclick = FireProjectile; 
+                ItemSprite.onmouseover = function(event) {
+                    griditemarray[phygriditems.indexOf(event.target)].sprite = "RedTile.PNG";
+                }
+                ItemSprite.onmouseout = function(event) {
+                    griditemarray[phygriditems.indexOf(event.target)].sprite = event.target.src;
+                }
+                ItemSprite.style.height = (8*gridsize).toString()+"%";
+                ItemSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
+                ItemSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
+                for (f in fighterArray) {
+                    fighter = fighterArray[f];
+                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && fighter.plant) {
+                        newgi.sprite = "GreenTile.PNG"
+                        newgi.character = fighter;
+                        ItemSprite.src = "GreenTile.PNG";
+                    }
+                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && !(fighter.plant)) {
+                        newgi.sprite = "PurpleTile.PNG"
+                        newgi.character = fighter;
+                        ItemSprite.src = "PurpleTile.PNG";
+                    }
+                }
+                phygriditems.push(ItemSprite);
+                if (currentx%gridx == 0) {
+                    currenty += 1;
+                    currentx = 0;
+                }
+            }
+        }
         MessageText = document.createElement("p");
         MessageText.className = "MessageText";
         MessageText.innerHTML = modaltext;
@@ -892,17 +967,27 @@ function RemoveZombie(zombie) {
         CheckZindexes();
     }
     foundZombies = loadData("foundZombies");
+    if (foundZombies == null) {
+        foundZombies = []
+        UpdateData(foundZombies,"foundZombies");
+    }
     if (!(foundZombies.includes(zombie.name))) {
         foundZombies.push(zombie.name); 
         UpdateData(foundZombies,"foundZombies");
     }
 }
-function DoDamage(zombie, damageprojectile) {
+function DoDamage(zombie, damageprojectile,poses=[]) {
     zombiedead = false;
+    zombiehit = false;
+    //if (zombie.plant == true) {
+        //CreateConsoleText(currentPlant.name+" enjoyed that tasty corn snack, but next time aim for the zombies.");
+        //return zombiedead;
+    //}
     if (damageprojectile.name == Swallow.name) {
         if (zombie.canBeEaten) {
             CanAbility = [false,false];
             zombiedead = true;
+            zombiehit = true;
             UpdateTurnCount();
             CreateConsoleText("Armor Chomper has ate "+zombie.name+".");
             currentPlant.chewing = true;
@@ -925,17 +1010,21 @@ function DoDamage(zombie, damageprojectile) {
         }
     }
     else {
-        CreateConsoleText(currentPlant.name+" has hit "+zombie.name+" for "+ Math.round(damageprojectile.damage*currentPlant.dmgmult)+" damage.",true);
-        zombie.health -= Math.round(damageprojectile.damage*currentPlant.dmgmult);
-        UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
-        if (zombie.health <= 0) {
-            CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
-            RemoveZombie(zombie);
-            zombiedead = true;
-            CheckForWin();
-        }
-        else if (Math.random()*100 < damageprojectile.effectChance) {
-            ApplyEffects(currentPlant,zombie,damageprojectile);
+        if (zombie != "" && !(zombie.plant)) {
+            CreateConsoleText(currentPlant.name+" has hit "+zombie.name+" for "+ Math.round(damageprojectile.damage*currentPlant.dmgmult)+" damage.",true);
+            zombiehit = true;
+            poses = [zombie.coords[0],zombie.coords[1]]
+            zombie.health -= Math.round(damageprojectile.damage*currentPlant.dmgmult);
+            UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
+            if (zombie.health <= 0) {
+                CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
+                RemoveZombie(zombie);
+                zombiedead = true;
+                CheckForWin();
+            }
+            else if (Math.random()*100 < damageprojectile.effectChance) {
+                ApplyEffects(currentPlant,zombie,damageprojectile,true);
+            }
         }
         if (damageprojectile.splashRadius != 0) {
             zombiecoords = [];
@@ -946,7 +1035,8 @@ function DoDamage(zombie, damageprojectile) {
                 for (y = -(damageprojectile.splashRadius-1)/2; y <= (damageprojectile.splashRadius-1)/2; y++) {
                     if (!(x == 0 && y == 0)) {
                         for (z in ZombieArray) {
-                            if (ZombieArray[z].coords[0] == zombie.coords[0]+x && ZombieArray[z].coords[1] == zombie.coords[1]+y) {
+                            if (ZombieArray[z].coords[0] == poses[0]+x && ZombieArray[z].coords[1] == poses[1]+y) {
+                                zombiehit = true;
                                 CreateConsoleText(currentPlant.name+" has hit "+ZombieArray[z].name+" for "+Math.round(damageprojectile.splashDamage*currentPlant.dmgmult)+" splash damage.");
                                 ZombieArray[z].health -= Math.round(damageprojectile.splashDamage*currentPlant.dmgmult);
                                 UpdatePassivePerks("everyattack",Math.round(damageprojectile.splashDamage*currentPlant.dmgmult));
@@ -958,7 +1048,7 @@ function DoDamage(zombie, damageprojectile) {
                                     break;
                                 }
                                 else if (Math.random()*100 < damageprojectile.effectChance) {
-                                    ApplyEffects(currentPlant,ZombieArray[z],damageprojectile);
+                                    ApplyEffects(currentPlant,ZombieArray[z],damageprojectile,false);
                                 }
                             }
                         }
@@ -967,12 +1057,48 @@ function DoDamage(zombie, damageprojectile) {
             }
         }
     }
+    if (!(zombiehit)) {
+        if (zombie.plant) {
+            CreateConsoleText(currentPlant.name+" enjoyed that tasty corn snack, but next time aim for the zombies.") 
+        }
+        else {
+            CreateConsoleText(currentPlant.name+" has hit nothing.");
+        }
+    }
     if (zombiedead) {
         zombie = "";
     }
     return zombiedead;
 }
-function FireProjectile() { 
+function FireSupport(support) {
+    if (!(CanAbility[0]) && !(CanAbility[1])) {
+        CreateConsoleText("You cannot use any more abilities this turn.",false,false);
+    }
+    else if (support.TimeUntilReady > 0) {
+        if (support.TimeUntilReady == support.reloadTime+1) {
+            CreateConsoleText("This ability will be ready in "+(parseInt(support.TimeUntilReady)-1)+" turn(s).",false,false); 
+        }
+        else {
+            CreateConsoleText("This ability will be ready in "+support.TimeUntilReady+" turn(s).",false,false); 
+        }
+    }
+    else {
+        CreateConsoleText(currentPlant.name+" has used "+support.name+".");
+        currentProjectile.TimeUntilReady = currentProjectile.reloadTime+1; 
+        currentPlant.dmgmult *= currentProjectile.dmgmultincrease;
+        currentPlant.currentSupports.push(support);
+        if (CanAbility[0]) {
+            CanAbility[0] = false;
+        }
+        else if (CanAbility[1]) {
+            CanAbility[1] = false;
+        }
+        updategrid();
+        UpdateTurnCount();
+    }
+    SpecialButton.click();    
+}
+function FireProjectile() {  
     willhit = false;
     for (g in griditemarray) {
         if (griditemarray[g].sprite == "RedTile.PNG") {
@@ -995,6 +1121,12 @@ function FireProjectile() {
     }
     else {
         CreateConsoleText(currentPlant.name+" has used "+currentProjectile.name+".");
+        for (support in currentPlant.currentSupports) {
+            support = currentPlant.currentSupports[support];
+            if (support.primary && currentPlant.primaries[0].name != currentProjectile.name) {
+                currentPlant.dmgmult = currentPlant.dmgmult/support.dmgmultincrease;
+            }
+        }
         currentProjectile.TimeUntilReady = currentProjectile.reloadTime+1; 
         currentProjectile.shotsLeft = currentProjectile.shots;
         missedshots = 0;
@@ -1007,9 +1139,9 @@ function FireProjectile() {
                 }
             }
         }
-        if (currentProjectile.shots > 1) {
-            CreateConsoleText(currentPlant.name+" has missed "+missedshots+" out of their "+currentProjectile.shots+" shots.");
-        }
+        // if (currentProjectile.shots > 1) {
+        //     CreateConsoleText(currentPlant.name+" has missed "+missedshots+" out of their "+currentProjectile.shots+" shots.");
+        // }
         if (CanAbility[0]) {
             CanAbility[0] = false;
         }
@@ -1017,6 +1149,7 @@ function FireProjectile() {
             CanAbility[1] = false;
         }
         g =0;
+        redtiles = [];
         while (g <= griditemarray.length-1) {
             if (CD == 0 || CD == 1) {
                 gi = griditemarray[g];
@@ -1025,34 +1158,43 @@ function FireProjectile() {
                 gi = griditemarray[griditemarray.length-1-g];
             }
             if (gi.sprite == "RedTile.PNG") {
-                if (currentProjectile.name == Swallow.name) {
-                    DoDamage(gi.character,currentProjectile);
-                    break;
+                redtiles.push(gi);
+            }
+            g++
+        }
+        for (shot = 0; shot < (currentProjectile.shots-missedshots); shot++) {
+            if (currentProjectile.shotsLeft == 0) {
+                break;
+            }
+            currentProjectile.shotsLeft -= 1;
+            if (currentProjectile.pierces) {
+                for (rt in redtiles) {
+                    DoDamage(redtiles[rt].character,currentProjectile)
                 }
-                if (currentProjectile.shotsLeft == 0) {
-                    break;
-                }
-                else {
-                    for (shot = 0; shot < (currentProjectile.shots-missedshots); shot++) {
-                        currentProjectile.shotsLeft -= 1;
-                        US = gi.character.underShield;
-                        if (DoDamage(gi.character,currentProjectile)) { 
-                            updatecharactergrid();
-                            if (US != "" && currentProjectile.shotsLeft != 0) {
-                                DoDamage(US,currentProjectile);
-                                currentProjectile.shotsLeft -= 1;
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                        if (currentProjectile.shotsLeft == 0) {
-                            break
-                        }
+                updatecharactergrid();
+            }
+            else {
+                US = redtiles[0].character.underShield;
+                if (DoDamage(redtiles[0].character,currentProjectile,[redtiles[0].codx,redtiles[0].cody])) { 
+                    updatecharactergrid();
+                    if (US == "") {
+                        redtiles.shift();
+                    }
+                    if (redtiles.length == 0) {
+                        break;
                     }
                 }
             }
-            g++
+        }
+        for (s in currentPlant.currentSupports) {
+            support = currentPlant.currentSupports[s];
+            if (support.primary && currentPlant.primaries[0].name != currentProjectile.name) {
+                currentPlant.dmgmult = currentPlant.dmgmult*support.dmgmultincrease;
+            }
+            else {
+                currentPlant.dmgmult = currentPlant.dmgmult/support.dmgmultincrease;
+                currentPlant.currentSupports.splice(s, 1);
+            }
         }
         updategrid();
         UpdateTurnCount();
@@ -1212,77 +1354,78 @@ function LoadGame() {
         theme = SoundArray[theme];
         theme.sound.volume = currentVolume;
     }
-    for (a in currentPlant.attacks) {
-        atak = currentPlant.attacks[a];
-        attackbutton = document.createElement("button");
-        attackbutton.className = "AbilityButton";
-        attackbutton.innerHTML = atak.name;
-        attackbutton.id = atak.name;
-        abilitybuttons.appendChild(attackbutton);
-        attackbutton.onclick = function(event) {
-            for (a in currentPlant.attacks) {
-                if (event.target.id == currentPlant.attacks[a].name) {
-                    attack = currentPlant.attacks[a];
-                }
-            }
-            currentProjectile = attack;
-            CD = 0;
-            CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[["Use",FireProjectile],["Rotate Attack",SwitchAD]]);
-            for (is in phygriditems) {
-                phygriditems[is].remove();
-            }
-            phygriditems = [];
-            griditemarray = [];
-            currentx = 0;
-            currenty = 0;
-            fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
-            for (i = 0; i < gridx*gridy; i++) {
-                currentx += 1;
-                ItemSprite = document.createElement("img");
-                newgi = new griditem();
-                newgi.codx = currentx;
-                newgi.cody = currenty;
-                newgi.sprite = "BlankTile.PNG"
-                griditemarray.push(newgi);
-                ItemSprite.src = "BlankTile.PNG";
-                wc.appendChild(ItemSprite);
-                ItemSprite.style.position = "absolute";
-                ItemSprite.className = "gridTile";
-                ItemSprite.onclick = tryToMove;
-                ItemSprite.style.height = (8*gridsize).toString()+"%";
-                ItemSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
-                ItemSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
-                for (f in fighterArray) {
-                    fighter = fighterArray[f];
-                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && fighter.plant) {
-                        newgi.sprite = "GreenTile.PNG"
-                        newgi.character = fighter;
-                        ItemSprite.src = "GreenTile.PNG";
-                    }
-                    if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && !(fighter.plant)) {
-                        newgi.sprite = "PurpleTile.PNG"
-                        newgi.character = fighter;
-                        ItemSprite.src = "PurpleTile.PNG";
-                    }
-                }
-                if((currentPlant.coords[0]+1 <= currentx && currentx <= currentPlant.coords[0]+attack.range) && currenty === currentPlant.coords[1]) {
-                    if (newgi.sprite == "PurpleTile.PNG") {
-                        newgi.sprite = "RedTile.PNG";
-                        ItemSprite.src = "RedTile.PNG";
-                    }
-                    else {
-                        newgi.sprite = "BlueTile.PNG";
-                        ItemSprite.src = "BlueTile.PNG";
-                    }
-                }
-                phygriditems.push(ItemSprite);
-                if (currentx%gridx == 0) {
-                    currenty += 1;
-                    currentx = 0;
-                }
-            }
-        }
-    }
+    // for (a in currentPlant.attacks) {
+    //     atak = currentPlant.attacks[a];
+    //     attackbutton = document.createElement("button");
+    //     attackbutton.className = "AbilityButton";
+    //     attackbutton.innerHTML = atak.name;
+    //     attackbutton.id = atak.name;
+    //     abilitybuttons.appendChild(attackbutton);
+    //     attackbutton.onclick = function(event) {
+    //         for (a in currentPlant.attacks) {
+    //             if (event.target.id == currentPlant.attacks[a].name) {
+    //                 attack = currentPlant.attacks[a];
+    //             }
+    //         }
+    //         currentProjectile = attack;
+    //         CD = 0;
+    //         CreateModal((attack.name+"Info"),attack.name,attack.desc,attack.displaySprite,[["Use",FireProjectile],["Rotate Attack",SwitchAD]]);
+    //         for (is in phygriditems) {
+    //             phygriditems[is].remove();
+    //         }
+    //         phygriditems = [];
+    //         griditemarray = [];
+    //         currentx = 0;
+    //         currenty = 0;
+    //         fighterPhysArray[fighterArray.indexOf(currentPlant)].style.transform = "scaleX(1)";
+    //         for (i = 0; i < gridx*gridy; i++) {
+    //             currentx += 1;
+    //             ItemSprite = document.createElement("img");
+    //             newgi = new griditem();
+    //             newgi.codx = currentx;
+    //             newgi.cody = currenty;
+    //             newgi.sprite = "BlankTile.PNG"
+    //             griditemarray.push(newgi);
+    //             ItemSprite.src = "BlankTile.PNG";
+    //             wc.appendChild(ItemSprite);
+    //             ItemSprite.style.position = "absolute";
+    //             ItemSprite.className = "gridTile";
+    //             ItemSprite.onclick = tryToMove;
+    //             ItemSprite.style.height = (8*gridsize).toString()+"%";
+    //             ItemSprite.style.top = (gridsize*(12+(currenty)*8)).toString()+"%";
+    //             ItemSprite.style.left = (window.innerWidth*((gridsize*currentx)+gridy/(gridsize*2)-currenty*gridsize*0.7)*(1/18)).toString()+"px"
+    //             for (f in fighterArray) {
+    //                 fighter = fighterArray[f];
+    //                 if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && fighter.plant) {
+    //                     newgi.sprite = "GreenTile.PNG"
+    //                     newgi.character = fighter;
+    //                     ItemSprite.src = "GreenTile.PNG";
+    //                 }
+    //                 if (currentx === fighter.coords[0] && currenty === fighter.coords[1] && !(fighter.plant)) {
+    //                     newgi.sprite = "PurpleTile.PNG"
+    //                     newgi.character = fighter;
+    //                     ItemSprite.src = "PurpleTile.PNG";
+    //                 }
+    //             }
+    //             if((currentPlant.coords[0]+1 <= currentx && currentx <= currentPlant.coords[0]+attack.range) && currenty === currentPlant.coords[1]) {
+    //                 if (newgi.sprite == "PurpleTile.PNG") {
+    //                     newgi.sprite = "RedTile.PNG";
+    //                     ItemSprite.src = "RedTile.PNG";
+    //                 }
+    //                 else {
+    //                     newgi.sprite = "BlueTile.PNG";
+    //                     ItemSprite.src = "BlueTile.PNG";
+    //                 }
+    //             }
+    //             phygriditems.push(ItemSprite);
+    //             if (currentx%gridx == 0) {
+    //                 currenty += 1;
+    //                 currentx = 0;
+    //             }
+    //         }
+    //     }
+    // }
+    LoadAttackButtons();
     turnbutton.onclick = function() {
         turncounter.innerHTML = "Zombie's Turn";
         abilitybuttons.style.display = "none";
@@ -1335,6 +1478,9 @@ function LoadGame() {
             } 
             else if (ZombieArray[z].tickgiver.effectType == "goop poison") {
                 zombi.style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
+            }
+            else if (ZombieArray[z].tickgiver.effectType == "toxic") {
+                zombi.style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(173,255,47)) drop-shadow(0 0 0 rgb(173,255,47)) drop-shadow(0 0 0 rgb(173,255,47)) saturate(225%)";
             }
             
         }
@@ -1456,8 +1602,6 @@ function ResetGame() {
             }
         }
         ZombieArray = ZTS;
-        PlantTurnTheme.reset();
-        PlantTurnTheme.play();
         document.getElementById("LevelCount").innerHTML = "Wave "+difficultylevel;
     }
     currentPlant.coords = [2,2]; 
@@ -1477,6 +1621,9 @@ function ResetGame() {
             ZombieArray[z].supports[support].TimeUntilReady = ZombieArray[z].supports[support].STUP;
         }
         ZombieArray[z].health = ZombieArray[z].permhealth;
+        ZombieArray[z].tickgiver = "";
+        ZombieArray[z].tickTimeLeft = 0;
+        ZombieArray[z].stunned = false;
         prevzposes.push(ZombieArray[z].coords)
         CanZAbility.push(true);
         var zombi = document.createElement("img");
@@ -1728,7 +1875,7 @@ function CheckForLoss() {
         return true;
     }
     else if (currentPlant.health <= currentPlant.permhealth/3 && !(CriticalStage) && !(IsBossWave)) { 
-        CriticalStage = true;
+        CriticalStage = true; //*fix where plant dies instsantly from imp [owers?]
         UpdatePassivePerks("criticalphase");
         hi.src = "HealthIcon3.PNG";
         CriticalTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
@@ -1879,19 +2026,28 @@ function ChooseAPerk(chosenPerks=[]) {
     MessageText.style.left = "40%"
     MessageText.innerHTML = "CHOOSE A PERK!";
     Message.appendChild(MessageText); 
-    choosablePerks = passivePerks.concat(characterPerks);
+    choosablePerks = passivePerks.concat(characterPerks).concat(abilityPerks);
     offset = 0;
     willoffset = false;
     for (p=0; p<choosablePerks.length+offset; ) { 
         p = p-offset;
         perk = choosablePerks[p];
-        index = currentPlant.passiveperks.indexOf(perk);
-        if (index > -1) {
+        if (currentPlant.passiveperks.includes(perk)) {
+            index = choosablePerks.indexOf(perk);
             choosablePerks.splice(index, 1);
             willoffset = true;
         }
         if (characterPerks.includes(perk)) {
             if (perk.plantName != currentPlant.name || currentPlant.characterperk.name == perk.name) {
+                index = choosablePerks.indexOf(perk);
+                if (index > -1) {
+                    choosablePerks.splice(index, 1);
+                    willoffset = true;
+                }
+            }
+        }
+        if (abilityPerks.includes(perk)) {
+            if (perk.plantName != currentPlant.name || currentPlant.abilityperk.name == perk.name) {
                 index = choosablePerks.indexOf(perk);
                 if (index > -1) {
                     choosablePerks.splice(index, 1);
@@ -1921,51 +2077,35 @@ function ChooseAPerk(chosenPerks=[]) {
             ResetPerks();
             for (p in chosenPerks) {
                 if (event.target.id === chosenPerks[p].name) {
-                    ag = false;
-                    for (cperk in currentPlant.passiveperks) {
-                        if (currentPlant.passiveperks[cperk].name == chosenPerks[p].name) {
-                            ag = true;
-                        }
+                    if (currentPlant.passiveperks.length == 3 && passivePerks.includes(chosenPerks[p])) { 
+                        alert("you currently have the maximum number of passive perks equipped. Please upgrade a perk instead, or delete one of your existing passive perks.")
                     }
-                    if (!(ag)) {
-                        if (currentPlant.passiveperks.length == 3 && !(characterPerks.includes(chosenPerks[p]))) { 
-                            alert("you currently have the maximum number of passive perks equipped. Please upgrade a perk instead, or delete one of your existing perks.")
-                        }
-                        else if (characterPerks.includes(chosenPerks[p]) && currentPlant.characterperk != "") {
-                            alert("you already have a character perk equipped. Please upgrade a perk instead, or delete your existing character perk.")
-                        }
-                        else {
-                            if (passivePerks.includes(chosenPerks[p])) {
-                                currentPlant.passiveperks.push(chosenPerks[p])
-                                UpdatePassivePerks("onetime");
-                            }
-                            else if (characterPerks.includes(chosenPerks[p])) {
-                                ApplyCharacterPerk(chosenPerks[p])
-                            }
-                            document.getElementById("ChoosePerk").remove();
-                            SaveGame();
-                            LoadGame();
-                        }
+                    else if (characterPerks.includes(chosenPerks[p]) && currentPlant.characterperk != "") {
+                        alert("you already have a character perk equipped. Please upgrade a perk instead, or delete your existing character perk.")
+                    }
+                    else if (abilityPerks.includes(chosenPerks[p]) && currentPlant.abilityperk != "") {
+                        alert("you already have an ability perk equipped. Please upgrade a perk instead, or delete your existing ability perk.")
                     }
                     else {
-                        alert("you already have that perk equipped.")
+                        if (passivePerks.includes(chosenPerks[p])) {
+                            currentPlant.passiveperks.push(chosenPerks[p])
+                            UpdatePassivePerks("onetime");
+                        }
+                        else if (characterPerks.includes(chosenPerks[p]) || abilityPerks.includes(chosenPerks[p])) {
+                            ApplyCharOrAbilityPerk(chosenPerks[p])
+                        }
+                        document.getElementById("ChoosePerk").remove();
+                        SaveGame();
+                        LoadGame();
                     }
                 }
             }
         }
         MessageImage.onmouseover = function(event) {
-            for (p in chosenPerks) {
-                if (event.target.id === chosenPerks[p].name) {
-                    event.target.style.filter = "brightness(1.35)";
-                }
-            }
+            event.target.style.filter = "brightness(1.35)";
         }
         MessageImage.onmouseout = function(event) {
-            for (p in chosenPerks) {
-                if (event.target.id === chosenPerks[p].name) {
-                    event.target.style.filter = "brightness(1)";
-                }
-            }
+            event.target.style.filter = "brightness(1)";
         }
         Message.appendChild(MessageImage);
         MessageImage.style.width = "15%";
@@ -1990,7 +2130,7 @@ function ChooseAPerk(chosenPerks=[]) {
         MessageText.style.color = "blue";
         DescContainer.appendChild(MessageText);
     }
-    if (currentPlant.passiveperks.length > 0 || currentPlant.characterperk != "") {
+    if (currentPlant.passiveperks.length > 0 || currentPlant.characterperk != "" || currentPlant.abilityperk != "" ) {
         UpgradePerk = document.createElement("button");
         UpgradePerk.style.display = "block";
         UpgradePerk.innerHTML = "Upgrade or delete an existing perk instead";
@@ -2000,7 +2140,7 @@ function ChooseAPerk(chosenPerks=[]) {
         UpgradePerk.style.top = "90%";
         UpgradePerk.onclick = function() {
             document.getElementById("ChoosePerk").remove();
-            UpgradeAPerk(chosenPerks);
+            UpgradeAPerk(chosenPerks, 1);
         }
         Message.appendChild(UpgradePerk);
     }
@@ -2088,19 +2228,15 @@ function ViewPerk(perk, chosenPerks) {
                 ResetPerks();
                 perk.level += 1;
                 UpdatePassivePerks("onetime");
-                document.getElementById("UpgradePerk").remove();
-                document.getElementById("ViewingPerk").remove();
-                SaveGame();
-                LoadGame();
             }
             else {
                 perk.level += 1;
-                ApplyCharacterPerk(perk);
-                document.getElementById("UpgradePerk").remove();
-                document.getElementById("ViewingPerk").remove();
-                SaveGame();
-                LoadGame();
+                ApplyCharOrAbilityPerk(perk);
             }
+            document.getElementById("UpgradePerk").remove();
+            document.getElementById("ViewingPerk").remove();
+            SaveGame();
+            LoadGame();
         }
         Message.appendChild(UpPerk);
     }
@@ -2120,6 +2256,15 @@ function ViewPerk(perk, chosenPerks) {
             document.getElementById("UpgradePerk").remove();
             UpgradeAPerk(chosenPerks);
         }
+        else if (abilityPerks.includes(perk)) {
+            currentPlant.abilityperk = "";
+            perk.level = 1;
+            SaveGame();
+            currentPlant.attacks.pop();
+            document.getElementById("ViewingPerk").remove();
+            document.getElementById("UpgradePerk").remove();
+            UpgradeAPerk(chosenPerks);
+        }
         else {
             currentPlant.characterperk = "";
             perk.level = 1;
@@ -2134,7 +2279,7 @@ function ViewPerk(perk, chosenPerks) {
     }
     Message.appendChild(DelPerk);
 }
-function UpgradeAPerk(chosenPerks) {
+function UpgradeAPerk(chosenPerks, pc) {
     wc = document.getElementById("EverythingFitter");
     MessageContainer = document.createElement("div");
     wc.appendChild(MessageContainer);
@@ -2151,93 +2296,97 @@ function UpgradeAPerk(chosenPerks) {
     MessageText.style.left = "37%"
     MessageText.innerHTML = "UPGRADE A PERK!";
     Message.appendChild(MessageText);
-    for (p in currentPlant.passiveperks) {
-        perk = currentPlant.passiveperks[p];
-        MessageImage = document.createElement("img");
-        MessageImage.id = perk.name;
-        MessageImage.src = perk.sprite;
-        MessageImage.onclick = function(event) {
-            for (p in currentPlant.passiveperks) {
-                if (event.target.id === currentPlant.passiveperks[p].name) {
-                    ViewPerk(currentPlant.passiveperks[p], chosenPerks);
+    if (pc == 1) {
+        for (p in currentPlant.passiveperks) {
+            perk = currentPlant.passiveperks[p];
+            MessageImage = document.createElement("img");
+            MessageImage.id = perk.name;
+            MessageImage.src = perk.sprite;
+            MessageImage.onclick = function(event) {
+                for (p in currentPlant.passiveperks) {
+                    if (event.target.id === currentPlant.passiveperks[p].name) {
+                        ViewPerk(currentPlant.passiveperks[p], chosenPerks);
+                    }
                 }
             }
+            MessageImage.onmouseover = function(event) {
+                event.target.style.filter = "brightness(1.35)";
+            }
+            MessageImage.onmouseout = function(event) {
+                event.target.style.filter = "brightness(1)";
+            }
+            MessageImage.style.position = "absolute";
+            MessageImage.style.width = "15%";
+            MessageImage.style.left = (20+p*20).toString()+"%"
+            Message.appendChild(MessageImage);
+            MessageText = document.createElement("p");
+            MessageText.className = "MessageHeader";
+            MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
+            MessageText.style.position = "absolute";
+            MessageText.style.color = "blue";
+            MessageText.style.left = (20+p*20).toString()+"%"
+            MessageText.style.top = "55%";
+            Message.appendChild(MessageText);
+            DescContainer = document.createElement("div");
+            DescContainer.style.position = "absolute";
+            DescContainer.style.left = (22+p*20).toString()+"%"
+            DescContainer.style.top = "62%";
+            DescContainer.style.width = "15%";
+            Message.appendChild(DescContainer);
+            MessageText = document.createElement("p");
+            MessageText.className = "MessageText";
+            MessageText.innerHTML = perk.desc;
+            MessageText.style.color = "blue";
+            DescContainer.appendChild(MessageText);
         }
-        MessageImage.onmouseover = function(event) {
-            for (p in currentPlant.passiveperks) {
-                if (event.target.id === currentPlant.passiveperks[p].name) {
+    }
+    else if (pc == 2) {
+        ptd = [currentPlant.characterperk,currentPlant.abilityperk];
+        for (p in ptd) {
+            perk = ptd[p];
+            if (perk != "") {
+                MessageImage = document.createElement("img");
+                MessageImage.id = perk.name;
+                MessageImage.src = perk.sprite;
+                MessageImage.onclick = function() {
+                    if (event.target.id === currentPlant.characterperk.name) {
+                        ViewPerk(currentPlant.characterperk, chosenPerks);
+                    }
+                    else if (event.target.id === currentPlant.abilityperk.name) {
+                        ViewPerk(currentPlant.abilityperk, chosenPerks);
+                    }
+                }
+                MessageImage.onmouseover = function(event) {
                     event.target.style.filter = "brightness(1.35)";
                 }
-            }
-        }
-        MessageImage.onmouseout = function(event) {
-            for (p in currentPlant.passiveperks) {
-                if (event.target.id === currentPlant.passiveperks[p].name) {
+                MessageImage.onmouseout = function(event) {
                     event.target.style.filter = "brightness(1)";
                 }
+                MessageImage.style.position = "absolute";
+                MessageImage.style.width = "15%";
+                MessageImage.style.left = (20+p*20).toString()+"%"
+                Message.appendChild(MessageImage);
+                MessageText = document.createElement("p");
+                MessageText.className = "MessageHeader";
+                MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
+                MessageText.style.position = "absolute";
+                MessageText.style.color = "blue";
+                MessageText.style.left = (20+p*20).toString()+"%"
+                MessageText.style.top = "55%";
+                Message.appendChild(MessageText);
+                DescContainer = document.createElement("div");
+                DescContainer.style.position = "absolute";
+                DescContainer.style.left = (22+p*20).toString()+"%"
+                DescContainer.style.top = "62%";
+                DescContainer.style.width = "15%";
+                Message.appendChild(DescContainer);
+                MessageText = document.createElement("p");
+                MessageText.className = "MessageText";
+                MessageText.innerHTML = perk.desc;
+                MessageText.style.color = "blue";
+                DescContainer.appendChild(MessageText);
             }
         }
-        MessageImage.style.position = "absolute";
-        MessageImage.style.width = "15%";
-        MessageImage.style.left = (10+p*20).toString()+"%"
-        Message.appendChild(MessageImage);
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageHeader";
-        MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
-        MessageText.style.position = "absolute";
-        MessageText.style.color = "blue";
-        MessageText.style.left = (10+p*20).toString()+"%"
-        MessageText.style.top = "55%";
-        Message.appendChild(MessageText);
-        DescContainer = document.createElement("div");
-        DescContainer.style.position = "absolute";
-        DescContainer.style.left = (12+p*20).toString()+"%"
-        DescContainer.style.top = "62%";
-        DescContainer.style.width = "15%";
-        Message.appendChild(DescContainer);
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageText";
-        MessageText.innerHTML = perk.desc;
-        MessageText.style.color = "blue";
-        DescContainer.appendChild(MessageText);
-    }
-    if (currentPlant.characterperk != "") {
-        perk = currentPlant.characterperk;
-        MessageImage = document.createElement("img");
-        MessageImage.id = perk.name;
-        MessageImage.src = perk.sprite;
-        MessageImage.onclick = function() {
-            ViewPerk(currentPlant.characterperk, chosenPerks);
-        }
-        MessageImage.onmouseover = function(event) {
-            event.target.style.filter = "brightness(1.35)";
-        }
-        MessageImage.onmouseout = function(event) {
-            event.target.style.filter = "brightness(1)";
-        }
-        MessageImage.style.position = "absolute";
-        MessageImage.style.width = "15%";
-        MessageImage.style.left = "70%"
-        Message.appendChild(MessageImage);
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageHeader";
-        MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
-        MessageText.style.position = "absolute";
-        MessageText.style.color = "blue";
-        MessageText.style.left = "67%"
-        MessageText.style.top = "55%";
-        Message.appendChild(MessageText);
-        DescContainer = document.createElement("div");
-        DescContainer.style.position = "absolute";
-        DescContainer.style.left = "72%"
-        DescContainer.style.top = "62%";
-        DescContainer.style.width = "15%";
-        Message.appendChild(DescContainer);
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageText";
-        MessageText.innerHTML = perk.desc;
-        MessageText.style.color = "blue";
-        DescContainer.appendChild(MessageText);
     }
     ChoosePerk = document.createElement("button");
     ChoosePerk.style.display = "block";
@@ -2251,6 +2400,27 @@ function UpgradeAPerk(chosenPerks) {
         ChooseAPerk(chosenPerks);
     }
     Message.appendChild(ChoosePerk);
+    UpgradePerk = document.createElement("button");
+    UpgradePerk.style.display = "block";
+    if (pc == 1) {
+        UpgradePerk.innerHTML = "view page 2 of your perks";
+        UpgradePerk.onclick = function() {
+            document.getElementById("UpgradePerk").remove();
+            UpgradeAPerk(chosenPerks, 2);
+        }
+    }
+    else if (pc == 2) {
+        UpgradePerk.innerHTML = "view page 1 of your perks";
+        UpgradePerk.onclick = function() {
+            document.getElementById("UpgradePerk").remove();
+            UpgradeAPerk(chosenPerks, 1);
+        }
+    }
+    UpgradePerk.className = "MessageButton";
+    UpgradePerk.style.position = "absolute";
+    UpgradePerk.style.left = "57%";
+    UpgradePerk.style.top = "90%";
+    Message.appendChild(UpgradePerk);
 }
 function ViewPerks() { 
     wc = document.getElementById("EverythingFitter");
@@ -2274,55 +2444,59 @@ function ViewPerks() {
     MessageText.className = "MessageHeader";
     MessageText.innerHTML = "These are all of your current perks.<br>";
     Message.appendChild(MessageText);
-    if (currentPlant.characterperk != "") {
-        perkcontainer = document.createElement("div");
-        Message.appendChild(perkcontainer);
-        MessageImage = document.createElement("img");
-        MessageImage.src = currentPlant.characterperk.sprite;
-        perkcontainer.appendChild(MessageImage);
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageHeader";
-        MessageText.innerHTML = currentPlant.characterperk.name+" (Level "+currentPlant.characterperk.level+")";
-        perkcontainer.appendChild(MessageText);
-        if (currentPlant.characterperk.level == 1) {
-            MessageText.style.color = "blue";
-        }
-        else if (currentPlant.characterperk.level == 2) {
-            MessageText.style.color = "gold";
-        }
-        else if (currentPlant.characterperk.level == 3) {
-            MessageText.style.color = "purple";
-        }
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageText";
-        MessageText.innerHTML = currentPlant.characterperk.desc;
-        perkcontainer.appendChild(MessageText);
-        for (ls in currentPlant.characterperk.levelstats) {
-            rlv = parseInt(ls)+1
-            if (rlv == currentPlant.characterperk.level) {
-                MessageText = document.createElement("b");
-                if (rlv == 1) {
-                    MessageText.style.color = "blue";
-                }
-                else if (rlv == 2) {
-                    MessageText.style.color = "gold";
-                }
-                else if (rlv == 3) {
-                    MessageText.style.color = "purple";
-                }
+    ptd = [currentPlant.characterperk,currentPlant.abilityperk];
+    for (p in ptd) {
+        perk = ptd[p];
+        if (perk != "") {
+            perkcontainer = document.createElement("div");
+            Message.appendChild(perkcontainer);
+            MessageImage = document.createElement("img");
+            MessageImage.src = perk.sprite;
+            perkcontainer.appendChild(MessageImage);
+            MessageText = document.createElement("p");
+            MessageText.className = "MessageHeader";
+            MessageText.innerHTML = perk.name+" (Level "+perk.level+")";
+            perkcontainer.appendChild(MessageText);
+            if (perk.level == 1) {
+                MessageText.style.color = "blue";
             }
-            else {
-                MessageText = document.createElement("p");
+            else if (perk.level == 2) {
+                MessageText.style.color = "gold";
             }
-
+            else if (perk.level == 3) {
+                MessageText.style.color = "purple";
+            }
+            MessageText = document.createElement("p");
             MessageText.className = "MessageText";
-            MessageText.innerHTML = "Level "+(rlv)+"<br>"+currentPlant.characterperk.levelstats[ls];
+            MessageText.innerHTML = perk.desc;
+            perkcontainer.appendChild(MessageText);
+            for (ls in perk.levelstats) {
+                rlv = parseInt(ls)+1
+                if (rlv == perk.level) {
+                    MessageText = document.createElement("b");
+                    if (rlv == 1) {
+                        MessageText.style.color = "blue";
+                    }
+                    else if (rlv == 2) {
+                        MessageText.style.color = "gold";
+                    }
+                    else if (rlv == 3) {
+                        MessageText.style.color = "purple";
+                    }
+                }
+                else {
+                    MessageText = document.createElement("p");
+                }
+    
+                MessageText.className = "MessageText";
+                MessageText.innerHTML = "Level "+(rlv)+"<br>"+perk.levelstats[ls];
+                perkcontainer.appendChild(MessageText);
+            }
+            MessageText = document.createElement("p");
+            MessageText.className = "MessageText";
+            MessageText.innerHTML = "--------------------------------------";
             perkcontainer.appendChild(MessageText);
         }
-        MessageText = document.createElement("p");
-        MessageText.className = "MessageText";
-        MessageText.innerHTML = "--------------------------------------";
-        perkcontainer.appendChild(MessageText);
     }
     for (cperk in currentPlant.passiveperks) { 
         cperk = currentPlant.passiveperks[cperk];
@@ -2375,7 +2549,7 @@ function ViewPerks() {
         MessageText.innerHTML = "--------------------------------------";
         perkcontainer.appendChild(MessageText);
     }
-    if (currentPlant.passiveperks.length == 0 && currentPlant.characterperk == "") {
+    if (currentPlant.passiveperks.length == 0 && currentPlant.characterperk == "" && currentPlant.abilityperk == "") {
         MessageText = document.createElement("p");
         MessageText.className = "MessageText";
         MessageText.innerHTML = "You don't have any perks. When you get a perk, it will show here.";
@@ -2383,22 +2557,30 @@ function ViewPerks() {
     }
 }
 function UpdateTurnCount() {
-    if (IsPlayerTurn) {
-        al = 0;
-        ml = 0;
-        if (CanAbility[0]) {
-            al += 1;
-        }
-        if (CanAbility[1]) {
-            al += 1;
-        }
-        if (CanMove) {
-            ml = 1;
-        }
-        turncounter.innerHTML = currentPlant.name+"'s Turn: "+ml+" move left and "+al+" ability left";
+    mp = "";
+    ap = "y";
+    al = 0;
+    ml = 0;
+    if (CanAbility[0]) {
+        al += 1;
+    }
+    if (CanAbility[1]) {
+        al += 1;
+    }
+    if (CanMove) {
+        ml += 1;
+    }
+    if (al>1 || al == 0) {
+        ap = "ies";
+    }
+    if (ml>1 || ml == 0) {
+        mp = "s";
+    }
+    if (currentPlant.name[currentPlant.name.length-1] == "s") {
+        turncounter.innerHTML = currentPlant.name+"' Turn: "+ml+" move"+mp+" left and "+al+" abilit"+ap+" left"; //*Cactus's
     }
     else {
-        turncounter.innerHTML = currentPlant.name+"'s Turn: 0 move left and 0 ability left";
+        turncounter.innerHTML = currentPlant.name+"'s Turn: "+ml+" move"+mp+" left and "+al+" abilit"+ap+" left"; 
     }
 }
 function UpdateTicks() { 
@@ -2422,6 +2604,7 @@ function UpdateTicks() {
             if (zombie.tickTimeLeft <= 0 && zombie.health > 0) {
                 fighterPhysArray[fighterArray.indexOf(zombie)].style.filter = "";
                 zombie.tickgiver = "";
+                zombie.dmgmult = 1;
             }
         }
         z += 1+offset;
@@ -2432,7 +2615,21 @@ function UpdateTicks() {
     }
     updategrid();
 }
-function ApplyEffects(Fighter1,Fighter2,attack) {
+function ApplyEffects(Fighter1,Fighter2,attack,direct=false) {
+    let tt = "";
+    let bonus = 0;
+    if (direct && attack.effectDuration != attack.directEffectDuration) {
+        bonus = 1;
+    }
+    if (attack.effectDuration == 1) {
+        tt = "one turn";
+    }
+    if (attack.effectDuration+bonus == 2) {
+        tt = "two turns";
+    }
+    if (attack.effectDuration+bonus == 3) {
+        tt = "three turns";
+    }
     if (attack.effectType == "frozen") {
         if (Fighter2.plant)  {
             if (Fighter2.effectCooldown <= 0) {
@@ -2453,22 +2650,29 @@ function ApplyEffects(Fighter1,Fighter2,attack) {
         Fighter2.stunned = true;
     }
     if (attack.effectType == "goop poison") {
-        if (attack.effectDuration > 1) {
-            CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for two turns.") 
-        }
-        else {
-            CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for one turn.") 
-        }
+        CreateConsoleText(Fighter1.name+" has gooped "+Fighter2.name+" for "+tt+".") 
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) drop-shadow(0 0 0 rgb(238,130,238)) saturate(225%)";
         Fighter2.stunned = true;
         Fighter2.tickgiver = attack;
-        Fighter2.tickTimeLeft = attack.effectDuration;
     }
     if (attack.effectType == "fire") {
-        CreateConsoleText(Fighter1.name+" has lit "+Fighter2.name+" on fire for two turns.") 
+        CreateConsoleText(Fighter1.name+" has lit "+Fighter2.name+" on fire for "+tt+".") 
         fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) drop-shadow(0 0 0 rgb(255,153,51)) saturate(225%)";
         Fighter2.tickgiver = attack;
         Fighter2.tickTimeLeft = attack.effectDuration;
+    }
+    if (attack.effectType == "toxic") {
+        CreateConsoleText(Fighter1.name+" has intoxicated "+Fighter2.name+" for "+tt+".") 
+        fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(173,255,47)) drop-shadow(0 0 0 rgb(173,255,47)) drop-shadow(0 0 0 rgb(173,255,47)) saturate(225%)";
+        Fighter2.tickgiver = attack;
+        Fighter2.tickTimeLeft = attack.effectDuration;
+        Fighter2.dmgmult = attack.effectBonus;
+        if (direct) {
+            Fighter2.tickTimeLeft = attack.directEffectDuration;
+        }
+        else {
+            Fighter2.tickTimeLeft = attack.effectDuration;
+        }
     }
     if (attack.effectType == "electrocute") {
         CreateConsoleText(Fighter1.name+" has electrocuted "+Fighter2.name+" for one turn.") 
@@ -2758,24 +2962,31 @@ class AttackType {
         this.shotsLeft = 1;
         this.accuracy = 101; //percentage
         this.accuracyoffset = 0;
+        this.pierces = false;
         this.reloadTime = -1; //how many turns it takes until it's ready again
         this.TimeUntilReady = 0;
         this.STUP = 0;
-        this.effectChance = 0; //percent chance to stun
+        this.effectChance = 0; //percent chance to apply effect
         this.effectType = "";
         this.effectDamage = 0; //only applue to dmg tick
         this.effectDuration = 0; //ditto (clay)
+        this.directEffectDuration = 0; //phryjming is col
+        this.effectBonus = 0; //bonus stuff.. during effect is goin on
         this.displaySprite = ""; //sprite displaying ability
     }
 }
-class SupportType {
+class SupportType { //*make primary damge increase suport tipe for jade cocktus
     constructor() {
         this.type = "";
         this.name = "";
+        this.desc = "";
+        this.dmgmultincrease = 1;
+        this.primary = false;
         this.zombie = ""; //the zombie to summon
         this.coords = []; //the coordinates of the zombies in comparision to the base zombie
         this.reloadTime = -1; //how many turns it takes until it's ready again
         this.TimeUntilReady = 0;
+        this.displaySprite = "";
     }
 }
 class Fighter {
@@ -2801,9 +3012,11 @@ class Fighter {
         this.coords = []; //x and y positions on the grid
         this.attacks = []; //what attacks this character has
         this.supports = [];
+        this.currentSupports = []; //currently active supports
         this.dmgmult = 1; //damage multiplieer
         this.passiveperks = [];
         this.characterperk = "";
+        this.abilityperk = "";
         this.movesLeft = 0;
         this.aliveSprite = ""; //hmm why is this specified to be alive? unless..
         this.iconSprite = "";
@@ -2819,10 +3032,10 @@ function clone(obj) {
 }
 fighterArray = [];
 BossWaves = [];
-//armor chomper things
+//chopper
 Goop = new AttackType();
 Goop.name = "Goop";
-Goop.desc = "Spit your slobber at a zombie to cover them in sticky goop that stops them from moving or attacking. <br>Direct hit dmg: 25 ∫ Splash dmg: 15 ∫ Splash dmg radius: 3 by 3 ∫ Range: 4 spaces ∫ Cooldown: 2 turns ∫ Stuns for 1 turn";
+Goop.desc = "Spit your slobber at a zombie to cover them in sticky goop that stops them from moving or attacking. <br>Dmg: 25 ∫ Splash Dmg: 15 ∫ Splash Radius: 3 by 3 ∫ Range: 4 spaces ∫ Cooldown: 2 turns ∫ Stuns for 1 turn";
 Goop.damage = 25;
 Goop.range = 4;
 Goop.reloadTime = 2;
@@ -2859,7 +3072,7 @@ AC.permhealth = 225;
 AC.powerLevel = 9001;
 AC.height = "30%";
 AC.chewingtime = 0;
-AC.attacks.push(Chomp,Swallow,Goop,Seed); //*add primary thingies
+AC.attacks.push(Chomp,Swallow,Goop,Seed); 
 AC.primaries = [Chomp,Swallow];
 AC.aliveSprite = "ArmorChomper.PNG";
 AC.iconSprite = "PlantLeft.PNG";
@@ -2880,7 +3093,7 @@ Gatling.reloadTime = 2;
 Gatling.displaySprite = "GatlingIcon.PNG";
 Bean = new AttackType();
 Bean.name = "Bean Bomb";
-Bean.desc = "Rock Pea tosses out an explosive bean that is sure to reduce the zombies to ash. <br>Direct hit dmg: 150 ∫ Splash dmg: 75 ∫ Splash dmg radius: 3 by 3 ∫ Range: Melee (2 spaces) ∫ Cooldown: 3 turns";
+Bean.desc = "Rock Pea tosses out an explosive bean that is sure to reduce the zombies to ash. <br>Dmg: 150 ∫ Splash Dmg: 75 ∫ Splash Radius: 3 by 3 ∫ Range: Melee (2 spaces) ∫ Cooldown: 3 turns";
 Bean.damage = 150;
 Bean.splashDamage = 75;
 Bean.splashRadius = 3;
@@ -2897,29 +3110,121 @@ Peashoot.height = "26%";
 Peashoot.chewingtime = 0;
 Peashoot.attacks.push(Pea,Gatling,Bean); 
 Peashoot.primaries = [Pea];
-//Peashoot.passiveperks.push(SuckHeal,BumpAttack,ColdResist);
 Peashoot.aliveSprite = "RockPea.PNG";
 Peashoot.iconSprite = "PlantRight.PNG";
-currentPlant = Peashoot;
-plantArray = [AC,Peashoot];
-class CharacterPerk {
+//cocktus
+Shatter = new AttackType();
+Shatter.name = "Shatter Shot"; 
+Shatter.desc = "Fire a Jade thorn at a Zombie that explodes into fragments when it hits. <br>Dmg: 40 ∫ Splash Dmg: 10 ∫ Splash Radius: 3 by 3 ∫ Range: 6 spaces ∫ No cooldown";
+Shatter.damage = 40;
+Shatter.splashDamage = 10;
+Shatter.splashRadius = 3;
+Shatter.range = 6;
+Shatter.displaySprite = "ShatterIcon.PNG";
+Precision = new SupportType();
+Precision.type = "dmgmult";
+Precision.name = "Enhanced Precision"
+Precision.desc = "Filler description, you know how it works"
+Precision.dmgmultincrease = 2;
+Precision.primary = true;
+Precision.reloadTime = 3;
+Corn = new AttackType();
+Corn.name = "Corn Strike";
+Corn.desc = "Click anywhere on the board to activate a Corn Strike there, dropping exposive corn cobs down on the zombies. <br>Dmg: 100 ∫ Splash Dmg: 50 ∫ Splash Radius: 3 by 3 ∫ Range: Everywhere ∫ Cooldown: 3 turns";
+Corn.damage = 100;
+Corn.splashDamage = 50;
+Corn.splashRadius = 3;
+Corn.range = "board"; 
+Corn.reloadTime = 3;
+Corn.displaySprite = "CornIcon.PNG";
+// Primary: Shatter Shot - Fire a Jade thorn at a Zombie that explodes into fragments when it hits. (Range: 6 Tiles, 3x3 splash) (Damage: 40 Direct, 10 Splash)
+
+// Ability 1: Enhanced Precision - Your primary attack (Shatter Shot) will do double the damage next time you use it. (Cooldown: 3 turns) (Charges do not stack)
+// Ability 2: Corn Strike - Click anywhere on the board to activate a Corn Strike there, dropping exposive corn cobs down on the zombies. (3x3 Splash, 100 Damage Direct, 50 Splash) (Cooldown: 3 Turns)
+JadeCac = new Fighter();
+JadeCac.plant = true;
+JadeCac.name = "Jade Cactus";
+JadeCac.health = 150;
+JadeCac.permhealth = 150;
+JadeCac.powerLevel = 9001;
+JadeCac.height = "30%";
+JadeCac.chewingtime = 0;
+JadeCac.attacks.push(Shatter,Precision,Corn); 
+JadeCac.primaries = [Shatter];
+JadeCac.aliveSprite = "JadeCactus.PNG";
+JadeCac.iconSprite = "JadeRight.PNG";
+currentPlant = AC;
+plantArray = [AC,Peashoot,JadeCac];
+class CharOrAbilityPerk {
     constructor() {
         this.name = "";  
-        this.desc = "";  
+        this.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";  
+        this.newdescs = [];
         this.level = 1; 
         this.levelstats = []; 
         this.values = [0,0,0]; 
         this.values2 = [0,0,0]; 
         this.values3 = [0,0,0];
-        this.newability = ""; 
+        this.newabilities = []; 
         this.sprite = ""; 
         this.plantName = "";
+        this.removeprimary = true;
     }
 }
+abilityPerks = [];
 characterPerks = [];
+DarkBean = new AttackType();
+DarkBean.name = "Dark Bean Bomb"; 
+DarkBean.damage = 75;
+DarkBean.range = 2;
+DarkBean.splashDamage = 25;
+DarkBean.splashRadius = 3;
+DarkBean.reloadTime = 2;
+DarkBean.displaySprite = "DarkBeanIcon.PNG";
+DarkBeanPerk = new CharOrAbilityPerk();
+DarkBeanPerk.name = "Dark Bean Bomb";
+DarkBeanPerk.desc = "(Only usable by Rock Pea) Gain a new ability, Dark Bean Bomb. Dark Bean Bomb is a less powerful, but more easily spammed version of Bean Bomb. (Does not replace reg Bean Bomb)";
+DarkBeanPerk.newdescs = [["Rock Pea tosses out a smaller, purple bean that does less damage. <br>Dmg: 75 ∫ Splash Dmg: 25 ∫ Splash Radius: 3 by 3 ∫ Range: 2 spaces ∫ Cooldown: 2 turns",
+"Rock Pea tosses out a smaller, purple bean that does less damage. <br>Dmg: 75 ∫ Splash Dmg: 25 ∫ Splash Radius: 3 by 3 ∫ Range: 4 spaces ∫ Cooldown: 2 turns",
+"Rock Pea tosses out a smaller, purple bean that does less damage. <br>Dmg: 75 ∫ Splash Dmg: 50 ∫ Splash Radius: 3 by 3 ∫ Range: 4 spaces ∫ Cooldown: 2 turns"]];
+DarkBeanPerk.levelstats = ["(Range: 2 Tiles, 3x3 radius) (75 Damage Direct, 25 Splash) (Cooldown: 2 turns)","Range extended to 4 tiles","Splash damage increased to 50"];
+DarkBeanPerk.values = [2,4,4];
+DarkBeanPerk.values2 = [25,25,50];
+DarkBeanPerk.newabilities = [DarkBean];
+DarkBeanPerk.sprite = "DarkBeanPerk.PNG";
+DarkBeanPerk.plantName = "Rock Pea";
+DarkBeanPerk.removeprimary = false;
+abilityPerks.push(DarkBeanPerk); 
+GrodyGoop = new AttackType();
+GrodyGoop.name = "Grody Goop"; 
+GrodyGoop.damage = 30;
+GrodyGoop.range = 4;
+GrodyGoop.splashDamage = 30;
+GrodyGoop.splashRadius = 3;
+GrodyGoop.effectChance = 101;
+GrodyGoop.effectType = "toxic";
+GrodyGoop.effectDamage = 10;
+GrodyGoop.effectDuration = 2;
+GrodyGoop.directEffectDuration = 2;
+GrodyGoop.effectBonus = 1;
+GrodyGoop.reloadTime = 3;
+GrodyGoop.displaySprite = "GrodyGoopIcon.PNG";
+GrodyGoopPerk = new CharOrAbilityPerk();
+GrodyGoopPerk.name = "Grody Goop";
+GrodyGoopPerk.desc = "(Only usable by Armor Chomper) Gain a new ability, Grody Goop. Grody Goop intoxicates groups of zombies, dealing toxic damage over time. (Does not replace reg Goop)";
+GrodyGoopPerk.newdescs = [["Armor Chomper gags up a toxic spit and launches it towards the Zombie horde. <br>Dmg: 30 ∫ Splash Dmg: 30 ∫ Splash Radius: 3 by 3 ∫ Toxic Dmg: 10 ∫ Toxic Duration: 2 turns ∫ Range: 4 spaces ∫ Cooldown: 3 turns",
+"Armor Chomper gags up a toxic spit and launches it towards the Zombie horde. <br>Dmg: 30 ∫ Splash Dmg: 30 ∫ Splash Radius: 3 by 3 ∫ Toxic Dmg: 10 ∫ Toxic Duration (Direct hit): 3 turns ∫ Toxic Duration (Splash): 2 turns ∫ Range: 4 spaces ∫ Cooldown: 3 turns",
+"Armor Chomper gags up a toxic spit and launches it towards the Zombie horde. <br>Dmg: 30 ∫ Splash Dmg: 30 ∫ Splash Radius: 3 by 3 ∫ Toxic Dmg: 10 ∫ Dmg reduction from being intoxicated: 50% ∫ Toxic Duration (Direct hit): 3 turns ∫ Toxic Duration (Splash): 2 turns ∫ Range: 4 spaces ∫ Cooldown: 3 turns"]];
+GrodyGoopPerk.levelstats = ["(Range: 4 Tiles, 3x3 radius) (Intoxicates Zombies, dealing DoT) (Direct and Splash Damage: 30, Tick Damage: 10) (Toxic Tick duration: 2 turns) (Cooldown: 3 turns)","Direct hit with Grody Goop intoxicates a Zombie for 3 turns.","Zombies intoxicated do 50% less damage."];
+GrodyGoopPerk.values = [2,3,3];
+GrodyGoopPerk.values2 = [1,1,0.5];
+GrodyGoopPerk.newabilities = [GrodyGoop];
+GrodyGoopPerk.sprite = "GrodyGoopPerk.PNG";
+GrodyGoopPerk.plantName = "Armor Chomper";
+GrodyGoopPerk.removeprimary = false;
+abilityPerks.push(GrodyGoopPerk); 
 FireShot = new AttackType();
 FireShot.name = "Scorch Shot"; 
-FireShot.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
 FireShot.damage = 50;
 FireShot.range = 4;
 FireShot.splashDamage = 10;
@@ -2927,13 +3232,14 @@ FireShot.effectChance = 33;
 FireShot.effectType = "fire";
 FireShot.effectDamage = 20;
 FireShot.effectDuration = 2;
+FireShot.directEffectDuration = 2;
 FireShot.displaySprite = "FirePeaIcon.PNG";
-FirePea = new CharacterPerk();
+FirePea = new CharOrAbilityPerk();
 FirePea.name = "Scorch Shot";
 FirePea.desc = "(Only usable by Rock Pea) Switches your current primary to Scorch Shot. Scorch Shot has a chance to light Zombies on fire, dealing damage to Zombies at the start of their turns.";
 FirePea.newdescs = [["Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
 "Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown",
-"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Direct hit dmg: 50 ∫ Splash dmg: 10 ∫ Splash dmg radius: 3 by 3 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown"]];
+"Rock Pea fires a molten hot rock at zombies, which can cause zombies to catch on fire. <br>Dmg: 50 ∫ Splash Dmg: 10 ∫ Splash Radius: 3 by 3 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 66% ∫ Range: 4 spaces ∫ No cooldown"]];
 FirePea.levelstats = ["(Range: 4 tiles) (Direct Damage: 50, Fire Damage: 20) (Burn duration: 2 turns) (Burn Chance: 33%)","Burn Chance increased to 66%","Gain a 3x3 Splash radius, dealing 10 damage with splash. Splashed zombies can be ignited."];
 FirePea.values = [33,66,66];
 FirePea.values2 = [0,0,3];
@@ -2943,30 +3249,49 @@ FirePea.plantName = "Rock Pea";
 characterPerks.push(FirePea); 
 SludShot = new AttackType();
 SludShot.name = "Sludgy Shot"; 
-SludShot.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
 SludShot.damage = 50;
 SludShot.range = 4;
 SludShot.effectChance = 25;
 SludShot.effectType = "goop poison";
 SludShot.effectDamage = 25;
 SludShot.effectDuration = 1;
+SludShot.directEffectDuration = 1;
 SludShot.displaySprite = "SludgePeaIcon.PNG";
-SludgePea = new CharacterPerk();
+SludgePea = new CharOrAbilityPerk();
 SludgePea.name = "Sludgy Shot";
 SludgePea.desc = "(Only usable by Rock Pea) Switches your current primary to Sludgy Shot. Sludgy Shot has a chance to \"Poison Goop\" Zombies, stunning them for 1 turn, and dealing damage to affected Zombies at the start of their turns.";
 SludgePea.newdescs = [["Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 25% ∫ Range: 4 spaces ∫ No cooldown",
 "Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 1 turn ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown",
 "Rock Pea fires a goopy rock that has a chance to goop and poison zombies. <br>Dmg: 50 ∫ Poison Goop Dmg: 25 ∫ Poison & Stun Duration: 2 turns ∫ Goop Chance: 50% ∫ Range: 4 spaces ∫ No cooldown"]];
-SludgePea.levelstats = ["(Range: 4 tiles) (Damage: 50, DoT: 25) (Goop Chance: 25%) (DoT Duration: 1 turn)","Increase Goop chance to 50%.","Increase DoT Duration and Stun Duration to 2 turns."];
+SludgePea.levelstats = ["(Range: 4 tiles) (Damage: 50, DoT: 25) (Goop Chance: 25%) (DoT Duration: 1 turn)","Increase Goop chance to 50%","Increase DoT Duration and Stun Duration to 2 turns."];
 SludgePea.values = [25,50,50];
 SludgePea.values2 = [1,1,2];
 SludgePea.newabilities = [SludShot];
 SludgePea.sprite = "SludgePeaPerk.PNG";
 SludgePea.plantName = "Rock Pea";
 characterPerks.push(SludgePea); 
+BerryShot = new AttackType();
+BerryShot.name = "Berry Shot"; 
+BerryShot.damage = 50;
+BerryShot.range = 4;
+BerryShot.splashDamage = 15;
+BerryShot.splashRadius = 3;
+BerryShot.displaySprite = "BerryPeaIcon.PNG";
+BerryPea = new CharOrAbilityPerk();
+BerryPea.name = "Berry Shot";
+BerryPea.desc = "(Only usable by Rock Pea) Switches your current primary to Berry Shot. Berry Shot deals splash damage to nearby Zombies.";
+BerryPea.newdescs = [["Rock Pea fires a bundle of berries that splash out onto zombies. <br>Dmg: 50 ∫ Splash Dmg: 15 ∫ Splash Radius: 3 by 3 ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a bundle of berries that splash out onto zombies. <br>Dmg: 50 ∫ Splash Dmg: 25 ∫ Splash Radius: 3 by 3 ∫ Range: 4 spaces ∫ No cooldown",
+"Rock Pea fires a bundle of berries that splash out onto zombies. <br>Dmg: 50 ∫ Splash Dmg: 25 ∫ Splash Radius: 5 by 5 ∫ Range: 4 spaces ∫ No cooldown"]];
+BerryPea.levelstats = ["(Range: 4 tiles, 3x3 radius) (Direct Damage: 50, Splash: 15)","Splash increased to 25 damage","Splash radius increased to 5x5"];
+BerryPea.values = [15,25,25];
+BerryPea.values2 = [3,3,5];
+BerryPea.newabilities = [BerryShot];
+BerryPea.sprite = "BerryPeaPerk.PNG";
+BerryPea.plantName = "Rock Pea";
+characterPerks.push(BerryPea); 
 SparkSpray = new AttackType();
 SparkSpray.name = "Spark Spray"; 
-SparkSpray.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
 SparkSpray.damage = 75;
 SparkSpray.range = 2;
 SparkSpray.splashDamage = 15;
@@ -2974,14 +3299,15 @@ SparkSpray.splashRadius = 3;
 SparkSpray.effectChance = 0;
 SparkSpray.effectType = "electrocute";
 SparkSpray.effectDuration = 1;
+SparkSpray.directEffectDuration = 1;
 SparkSpray.displaySprite = "PowerChomperIcon.PNG";
-PowerChomp = new CharacterPerk();
+PowerChomp = new CharOrAbilityPerk();
 PowerChomp.name = "Spark Spray";
 PowerChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Spark Spray. Spark Spray has a longer range, and will hit zombies near the first one it hits.";
 PowerChomp.newdescs = [["Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Range: 2 spaces ∫ No cooldown",
 "Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 15 ∫ Arc Radius: 3 by 3 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown",
 "Armor Chomper sprays electric sparks at zombies, which arc off onto nearby zombies. <br>Dmg: 75 ∫ Arc Dmg: 25 ∫ Arc Radius: 5 by 5 ∫ Electrocution chance: 10% ∫ Range: 2 spaces ∫ No cooldown"]];
-PowerChomp.levelstats = ["(Spray Range: 2 tiles, 3x3 radius) (Spray Direct Damage: 75, Splash: 15)","Gain a 10% chance to \"electrocute\" zombies, stunning them for one turn when dealing damage with Spark Spray.","Splash radius increased to 5x5, Arc damage increased to 25."];
+PowerChomp.levelstats = ["(Spray Range: 2 tiles, 3x3 radius) (Spray Direct Damage: 75, Splash: 15)","Gain a 10% chance to \"electrocute\" zombies, stunning them for one turn when dealing damage with Spark Spray.","Splash radius increased to 5x5, Arc damage increased to 25"];
 PowerChomp.values = [0,11,11];
 PowerChomp.values2 = [3,3,5];
 PowerChomp.values3 = [15,15,25];
@@ -2991,54 +3317,104 @@ PowerChomp.plantName = "Armor Chomper";
 characterPerks.push(PowerChomp); 
 ArcBelch = new AttackType();
 ArcBelch.name = "Arctic Belch"; 
-ArcBelch.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";
-ArcBelch.damage = 50;
+ArcBelch.damage = 75;
 ArcBelch.range = 4;
-ArcBelch.splashDamage = 25;
-ArcBelch.effectChance = 33;
+ArcBelch.splashDamage = 5;
+ArcBelch.effectChance = 25;
 ArcBelch.effectType = "frozen";
 ArcBelch.displaySprite = "YetiChomperIcon.PNG";
-YetiChomp = new CharacterPerk();
+YetiChomp = new CharOrAbilityPerk();
 YetiChomp.name = "Arctic Belch";
 YetiChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Arctic Belch. Arctic Belch has a longer range, and can freeze Zombies.";
-YetiChomp.newdescs = [["Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 4 spaces ∫ No cooldown",
-"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 50 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown",
-"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Direct hit dmg: 50 ∫ Splash dmg: 25 ∫ Splash dmg radius: 3 by 3 ∫ Freeze chance: 33% ∫ Range: 6 spaces ∫ No cooldown"]];
-YetiChomp.levelstats = ["(Belch Range: 4 tiles) (Damage: 50) (Freeze Chance: 33%)","Range increased to 6 tiles.","Arctic Belch gains 3x3 splash, hitting for 25 damage and can freeze."];
+YetiChomp.newdescs = [["Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 75 ∫ Freeze chance: 25% ∫ Range: 4 spaces ∫ No cooldown",
+"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 75 ∫ Freeze chance: 25% ∫ Range: 6 spaces ∫ No cooldown",
+"Armor Chomper hacks up a frozen rock from his winter vacation, which can freeze zombies. <br>Dmg: 75 ∫ Splash Dmg: 5 ∫ Splash Radius: 3 by 3 ∫ Freeze chance: 50% ∫ Range: 6 spaces ∫ No cooldown"]];
+YetiChomp.levelstats = ["(Belch Range: 4 tiles) (Damage: 75) (Freeze Chance: 25%)","Range increased to 6 tiles","Arctic Belch gains 3x3 splash, hitting for 5 damage and can freeze. Freeze Chance buffed to 50%"];
 YetiChomp.values = [4,6,6];
 YetiChomp.values2 = [0,0,3];
+YetiChomp.values3 = [25,25,50];
 YetiChomp.newabilities = [ArcBelch,Swallow];
 YetiChomp.sprite = "YetiChomperPerk.PNG";
 YetiChomp.plantName = "Armor Chomper";
-characterPerks.push(YetiChomp); //*add more chracter thingesi
-function ApplyCharacterPerk(cp) { //haha funni child secks
+characterPerks.push(YetiChomp);
+FireBelch = new AttackType();
+FireBelch.name = "Flame Belch"; 
+FireBelch.damage = 75;
+FireBelch.range = 2;
+FireBelch.effectChance = 33;
+FireBelch.effectType = "fire";
+FireBelch.effectDamage = 15;
+FireBelch.effectDuration = 2;
+FireBelch.directEffectDuration = 2;
+FireBelch.displaySprite = "FireChomperIcon.PNG";
+FireChomp = new CharOrAbilityPerk();
+FireChomp.name = "Flame Belch";
+FireChomp.desc = "(Only usable by Armor Chomper) Switches your current primary to Flame Belch. Flame Belch has extra range, and has a chance to light Zombies on fire, dealing damage to them at the start of their turns.";
+FireChomp.newdescs = [["Armor Chomper sprays fire out of his mouth, melting the zombies while not melting his stainless steel suit. <br>Dmg: 75 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Range: 2 spaces ∫ No cooldown",
+"Armor Chomper sprays fire out of his mouth, melting the zombies while not melting his stainless steel suit. <br>Dmg: 75 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 33% ∫ Pierces through Zombies ∫ Range: 2 spaces ∫ No cooldown",
+"Armor Chomper sprays fire out of his mouth, melting the zombies while not melting his stainless steel suit. <br>Dmg: 75 ∫ Fire Dmg: 20 ∫ Burn Duration: 2 turns ∫ Burn Chance: 75% ∫ Pierces through Zombies ∫ Range: 2 spaces ∫ No cooldown"]];
+FireChomp.levelstats = ["(Belch Range: 2 tiles) (Belch damage: 75, Burn damage: 15) (Burn Duration: 2 turns) (Burn Chance: 33%)","Belch now pierces, hitting all zombies in range.","Burn Chance increased to 75%"];
+FireChomp.values = [false,true,true]; 
+FireChomp.values2 = [33,33,75];
+FireChomp.newabilities = [FireBelch,Swallow];
+FireChomp.sprite = "FireChomperPerk.PNG";
+FireChomp.plantName = "Armor Chomper";
+characterPerks.push(FireChomp); 
+function ApplyCharOrAbilityPerk(cp) { //haha funni child secks
     if (cp.name == "Scorch Shot" || cp.name == "Spark Spray") {
-        cp.newability.effectChance = cp.values[cp.level-1];
-        cp.newability.splashRadius = cp.values2[cp.level-1];
+        cp.newabilities[0].effectChance = cp.values[cp.level-1];
+        cp.newabilities[0].splashRadius = cp.values2[cp.level-1];
     }
     if (cp.name == "Spark Spray") {
-        cp.newability.splashDamage = cp.values3[cp.level-1];
+        cp.newabilities[0].splashDamage = cp.values3[cp.level-1];
     }
     if (cp.name == "Arctic Belch") {
-        cp.newability.range = cp.values[cp.level-1];
-        cp.newability.splashRadius = cp.values2[cp.level-1];
+        cp.newabilities[0].range = cp.values[cp.level-1];
+        cp.newabilities[0].splashRadius = cp.values2[cp.level-1];
+        cp.newabilities[0].effectChance = cp.values3[cp.level-1];
+    }
+    if (cp.name == "Flame Belch") {
+        cp.newabilities[0].pierces = cp.values[cp.level-1];
+        cp.newabilities[0].effectChance = cp.values2[cp.level-1];
     }
     if (cp.name == "Sludgy Shot") {
-        cp.newability.effectChance = cp.values[cp.level-1];
-        cp.newability.effectDuration = cp.values2[cp.level-1];
+        cp.newabilities[0].effectChance = cp.values[cp.level-1];
+        cp.newabilities[0].effectDuration = cp.values2[cp.level-1];
+        cp.newabilities[0].directEffectDuration = cp.values2[cp.level-1];
     }
-    for (p in currentPlant.primaries) {
-        currentPlant.attacks[p] = cp.newabilities[p];
+    if (cp.name == "Berry Shot") {
+        cp.newabilities[0].splashDamage = cp.values[cp.level-1];
+        cp.newabilities[0].splashRadius = cp.values2[cp.level-1];
     }
-    for (ab in cp.newabilities) {
-        if (ab < cp.newdescs.length) {
-            currentPlant.attacks[ab].desc = cp.newdescs[ab][cp.level-1];
+    if (cp.name == "Dark Bean Bomb") {
+        cp.newabilities[0].range = cp.values[cp.level-1];
+        cp.newabilities[0].splashDamage = cp.values2[cp.level-1];
+    }
+    if (cp.name == "Grody Goop") {
+        cp.newabilities[0].directEffectDuration = cp.values[cp.level-1];
+        cp.newabilities[0].effectBonus = cp.values2[cp.level-1]; 
+    }
+    if (cp.removeprimary) {
+        for (p in currentPlant.primaries) {
+            currentPlant.attacks[p] = cp.newabilities[p];
         }
+        for (ab in cp.newabilities) {
+            if (ab < cp.newdescs.length) {
+                currentPlant.attacks[ab].desc = cp.newdescs[ab][cp.level-1];
+            }
+        }
+        currentPlant.characterperk = cp;
     }
-    currentPlant.characterperk = cp;
-    SaveGame();
+    else {
+        if (cp.level != 1) {
+            currentPlant.attacks.pop();
+        }
+        currentPlant.attacks.push(cp.newabilities[0]);
+        currentPlant.attacks[currentPlant.attacks.length-1].desc = cp.newdescs[0][cp.level-1];
+        currentPlant.abilityperk = cp;
+    }
 }
-//ApplyCharacterPerk(SludgePea);
+//ApplyCharOrAbilityPerk(FireChomp);
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3469,7 +3845,7 @@ class BossWave {
         this.theme = ""; //theme to play during the boss wave
         this.background = []; //secret cone stuff
     }
-} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 3 waves on turn 30 //*make it higher waves go!
+} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 4 waves on turn 30 //*make it higher waves go!
 AllImps = new BossWave();
 AllImps.name = "Wave of Imps";
 AllImps.zombies = [Imp, ImpKing, clone(Imp), YetiImp, clone(Imp), clone(ImpKing), clone(Imp)]; 
@@ -3492,7 +3868,7 @@ Garg.zombies = [Gargantuar];
 Garg.image = "GargBoss.PNG";
 Garg.imageWidth = "35%";
 Garg.imageLeft = "65%"; 
-Garg.availablewaves = [10];
+Garg.availablewaves = [10,30];
 Garg.availablecoords = [[5,2],[6,2],[7,2],[8,2]];
 Garg.randomizecoords = true;
 Garg.theme = "GargTheme.mp3"; 
@@ -3544,7 +3920,7 @@ Zombotany2.zombies = [Zomgatling,Zompea,Zomnut,Zomchomp,clone(Zompea)];
 Zombotany2.image = "Zombotany.PNG";
 Zombotany2.imageWidth = "40%";
 Zombotany2.imageLeft = "60%";
-Zombotany2.availablewaves = [15,20,25,30];
+Zombotany2.availablewaves = [15,20,25,30,35];
 Zombotany2.randomizecoords = true;
 for (x=5; x<10; x++) {
     for (y=0; y<5; y++) {
@@ -3560,7 +3936,7 @@ ConeZone.zombies = [ConeCrab,Conehead,clone(ConeCrab),clone(ConeCrab),clone(Cone
 ConeZone.image = "ConeZone.PNG";
 ConeZone.imageWidth = "35%";
 ConeZone.imageLeft = "65%";
-ConeZone.availablewaves = [5,10,15,25,30];
+ConeZone.availablewaves = [5,10,15,25,30,35];
 ConeZone.randomizecoords = true;
 for (x=4; x<10; x++) {
     for (y=0; y<5; y++) {
@@ -4085,12 +4461,7 @@ function TestAttack(zombie, attack) {
                         }
                     }
                     else {
-                        if (!(CriticalTheme)) {
-                            ZombieTurnTheme.stop();
-                        }
-                        else {
-                            CriticalTheme.stop();
-                        }
+                        CriticalTheme.stop();
                         StopTurn = true;
                     }
                 }
@@ -4379,6 +4750,19 @@ function RoundToOne(num) {
         return -1;
     }
 }
+function PlantTurn() {
+    setTimeout(function() { 
+        UpdateTicks();
+        UpdatePassivePerks("everyturn");
+        IsPlayerTurn = true;
+        ConsoleHistory.push("~ Plant's Turn ~");
+        CanMove = true;
+        CanAbility = [true, true];
+        abilitybuttons.style.display = "block";
+        UpdateTurnCount();
+        SaveGame();
+    }, 500)
+}
 function ZombieTurn(z) {
     zombie = ZombieArray[z];
     CanZAbility[z] = true;
@@ -4445,17 +4829,7 @@ function ZombieTurn(z) {
                                             PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                             MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                         }
-                                        setTimeout(function() {
-                                            UpdateTicks();
-                                            UpdatePassivePerks("everyturn");
-                                            IsPlayerTurn = true;
-                                            ConsoleHistory.push("~ Plant's Turn ~");
-                                            CanMove = true;
-                                            CanAbility = [true, true];
-                                            abilitybuttons.style.display = "block";
-                                            UpdateTurnCount();
-                                            SaveGame();
-                                        }, 500)
+                                        PlantTurn();
                                         currentPlant.aliveSprite = "ArmorChomper.PNG";
                                         fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
                                         }
@@ -4487,17 +4861,7 @@ function ZombieTurn(z) {
                                     PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                     MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                 }
-                                setTimeout(function() {
-                                    UpdateTicks();
-                                    UpdatePassivePerks("everyturn");
-                                    IsPlayerTurn = true;
-                                    ConsoleHistory.push("~ Plant's Turn ~");
-                                    CanMove = true;
-                                    CanAbility = [true, true];
-                                    abilitybuttons.style.display = "block";
-                                    UpdateTurnCount();
-                                    SaveGame();
-                                }, 500)
+                                PlantTurn();
                             }
                             updategrid();
                         }
@@ -4579,17 +4943,7 @@ function ZombieTurn(z) {
                                                 PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                                 MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                             }
-                                            setTimeout(function() {
-                                                UpdateTicks();
-                                                UpdatePassivePerks("everyturn");
-                                                IsPlayerTurn = true;
-                                                ConsoleHistory.push("~ Plant's Turn ~");
-                                                CanMove = true;
-                                                CanAbility = [true, true];
-                                                abilitybuttons.style.display = "block";
-                                                UpdateTurnCount();
-                                                SaveGame();
-                                            }, 500)
+                                            PlantTurn();
                                             currentPlant.aliveSprite = "ArmorChomper.PNG";
                                             fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
                                             }
@@ -4621,17 +4975,7 @@ function ZombieTurn(z) {
                                         PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                         MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                     }
-                                    setTimeout(function() {
-                                        UpdateTicks();
-                                        UpdatePassivePerks("everyturn");
-                                        IsPlayerTurn = true;
-                                        ConsoleHistory.push("~ Plant's Turn ~");
-                                        CanMove = true;
-                                        CanAbility = [true, true];
-                                        abilitybuttons.style.display = "block";
-                                        UpdateTurnCount();
-                                        SaveGame();
-                                    }, 500)
+                                    PlantTurn();
                                 }
                                 updategrid();
                             }
