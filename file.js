@@ -3124,7 +3124,7 @@ Shatter.displaySprite = "ShatterIcon.PNG";
 Precision = new SupportType();
 Precision.type = "dmgmult";
 Precision.name = "Enhanced Precision"
-Precision.desc = "Filler description, you know how it works"
+Precision.desc = "Your primary attack (Shatter Shot) will do double the damage next time you use it. <br>Dmg increase: 2x ∫ Cooldown: 3 turns"
 Precision.dmgmultincrease = 2;
 Precision.primary = true;
 Precision.reloadTime = 3;
@@ -3946,6 +3946,7 @@ for (x=4; x<10; x++) {
 ConeZone.theme = "ConeZoneTheme.mp3";
 ConeZone.background = ["ConeTile.PNG","ConeBackground.PNG"];
 BossWaves.push(ConeZone); 
+makeEntry(JadeCac,"[Somewhat informative description]","[Flavour text]") 
 makeEntry(Peashoot,"Rock Pea is a versatile character, capable of dealing with zombies at close range and long range. He doesn't have nearly as much health as his buddy Armor Chomper though.","Rock Pea can't shake the feeling that in a past life, he was someone else. Someone... different, yet very similar. Their last name was Fern. Rock Pea shudders at these thoughts, before blasting an imp into pieces.") 
 makeEntry(AC,"Armor Chomper is the main character of this game, and he's great at brawling with zombies and soaking up hits. He can goop up the zombies so they can't do anything, and then eat them as a snack.","Chompers all around the world are known for their immense hunger in Zombie flesh (and feet), but Armor Chomper holds a dark secret. He's not like other Chompers. He likes Cheese Balls. He buys them in the extra large containers and spends his free time licking the inside of them clean of any cheese dust. Can you really blame him?")
 makeEntry(Browncoat,"The simplest of Zombies, Browncoat Zombie shuffles towards the player and bites them.","Browncoat is the most expendable unit in the Zombie army, and he knows it. He's darn proud of it too. He knows there's strength in numbers, and since he can count to 6, he has to also be the strongest unit.") 
