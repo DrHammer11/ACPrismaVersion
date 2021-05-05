@@ -418,7 +418,7 @@ function BackToMenu() {
     StopAllSounds();
     MenuTheme.play();
     IsPlayerTurn = false;
-    CanMove = false;
+    MovesLeft = 0; 
     CriticalStage = false;
     IsBossWave = false;
     TheBossWave = "";
@@ -702,7 +702,7 @@ function StartGame() {
         turncounter.innerHTML = "Zombie's Turn";
         abilitybuttons.style.display = "none";
         IsPlayerTurn = false;
-        CanMove = false;
+        MovesLeft = 0;
         if (!(CriticalStage) && !(IsBossWave)) {
             ZombieTurnTheme.sound.currentTime = PlantTurnTheme.sound.currentTime;
             MusicFade(PlantTurnTheme,ZombieTurnTheme);
@@ -766,7 +766,7 @@ function StartGame() {
     fighterPhysArray[fighterArray.indexOf(tz)].style.transform = "scaleX(1)";
     IsPlayerTurn = true;
     ConsoleHistory.push("~ Plant's Turn ~");
-    CanMove = true; /*make modifyable amount of moves and abilities*/
+    MovesLeft = 1; //*make modifyable amount of abilities
     CanAbility = [true, true];
     ResetPerks();
     UpdateTurnCount();
@@ -796,21 +796,14 @@ function CreateModal(modalID,modalheader,modaltext,modalimage,modalbuttons) { //
         SpecialButton = document.createElement("span");
         SpecialButton.className= "close";
         SpecialButton.innerHTML = "&times;"
-        if (CanMove) {
-            SpecialButton.onclick = function() {
-                CanMove = true;
-                updategrid();
-                UpdateTurnCount();
-                document.getElementById("atakmodal").remove();
-            }
+        tempmoves = parseInt(MovesLeft)+0;
+        MovesLeft = 0;
+        SpecialButton.onclick = function() {
+            MovesLeft = parseInt(tempmoves)+0;
+            updategrid();
+            UpdateTurnCount();
+            document.getElementById("atakmodal").remove();
         }
-        else {
-            SpecialButton.onclick = function() {
-                updategrid();
-                document.getElementById("atakmodal").remove();
-            }
-        }
-        CanMove = false;
         Message.appendChild(SpecialButton);
         MessageImage = document.createElement("img");
         MessageImage.src = modalimage;
@@ -1025,8 +1018,12 @@ function DoDamage(zombie, damageprojectile,poses=[]) {
             zombiehit = true;
             poses = [zombie.coords[0],zombie.coords[1]]
             zombie.health -= Math.round(damageprojectile.damage*currentPlant.dmgmult);
-            UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
+            if (zombie.health > 0) {
+                UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
+            }
             if (zombie.health <= 0) {
+                console.log(Math.round(damageprojectile.damage*currentPlant.dmgmult),zombie.health)
+                UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult)+zombie.health);
                 CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
                 RemoveZombie(zombie);
                 zombiedead = true;
@@ -1049,8 +1046,11 @@ function DoDamage(zombie, damageprojectile,poses=[]) {
                                 zombiehit = true;
                                 CreateConsoleText(currentPlant.name+" has hit "+ZombieArray[z].name+" for "+Math.round(damageprojectile.splashDamage*currentPlant.dmgmult)+" splash damage.");
                                 ZombieArray[z].health -= Math.round(damageprojectile.splashDamage*currentPlant.dmgmult);
-                                UpdatePassivePerks("everyattack",Math.round(damageprojectile.splashDamage*currentPlant.dmgmult));
+                                if (ZombieArray[z].health > 0) {
+                                    UpdatePassivePerks("everyattack",Math.round(damageprojectile.splashDamage*currentPlant.dmgmult));
+                                }
                                 if (ZombieArray[z].health <= 0) {
+                                    UpdatePassivePerks("everyattack",Math.round(damageprojectile.splashDamage*currentPlant.dmgmult)+ZombieArray[z].health);
                                     CreateConsoleText(currentPlant.name+" has vanquished "+ZombieArray[z].name+".")
                                     RemoveZombie(ZombieArray[z]);
                                     zombiedead = true;
@@ -1443,7 +1443,7 @@ function LoadGame() {
         turncounter.innerHTML = "Zombie's Turn";
         abilitybuttons.style.display = "none";
         IsPlayerTurn = false;
-        CanMove = false;
+        MovesLeft = 0;
         if (!(CriticalStage) && !(IsBossWave)) {
             ZombieTurnTheme.sound.currentTime = PlantTurnTheme.sound.currentTime; 
             MusicFade(PlantTurnTheme,ZombieTurnTheme);
@@ -1525,7 +1525,7 @@ function LoadGame() {
         currentPlant.attacks[attack].TimeUntilReady = PlantData[0][attack];
     }
     IsPlayerTurn = true; 
-    CanMove = true;
+    MovesLeft = 1;
     CanAbility = [true, true];
     currentPlant.chewingtime = PlantData[4];
     currentPlant.chewing = false;
@@ -1673,7 +1673,7 @@ function ResetGame() {
     StopAllSounds();
     IsPlayerTurn = true;
     ConsoleHistory.push("~ Plant's Turn ~");
-    CanMove = true;
+    MovesLeft = 1;
     CanAbility = [true, true];
     currentPlant.chewing = false;
     currentPlant.chewingtime = 0;
@@ -1783,7 +1783,8 @@ function ResetGame() {
             },150)
         },200)
     }
-    else if (difficultylevel%5 == 1) { 
+    //else if (difficultylevel%5 == 1) { 
+    else if (true) {
         PerkTheme.play();
         ChooseAPerk();
     }
@@ -1815,7 +1816,7 @@ function CheckForWin() {
         if (IsBossWave) {
         }
         IsPlayerTurn = false;
-        CanMove = false;
+        MovesLeft = 0;
         CriticalStage = false;
         IsBossWave = false;
         TheBossWave = "";
@@ -1856,7 +1857,7 @@ function CheckForLoss() {
         ZombieTurnTheme.reset();
         PlantTurnTheme.reset();
         IsPlayerTurn = false;
-        CanMove = false;
+        MovesLeft = 0;
         CriticalStage = false;
         IsBossWave = false;
         TheBossWave = "";
@@ -1915,7 +1916,7 @@ function DeathByAllergy(allergen) {
     ZombieTurnTheme.reset();
     PlantTurnTheme.reset();
     IsPlayerTurn = false;
-    CanMove = false;
+    MovesLeft = 0;
     CriticalStage = false;
     IsBossWave = false;
     TheBossWave = "";
@@ -2042,13 +2043,15 @@ function ChooseAPerk(chosenPerks=[]) {
     choosablePerks = passivePerks.concat(characterPerks).concat(abilityPerks);
     offset = 0;
     willoffset = false;
-    for (p=0; p<choosablePerks.length+offset; ) { 
+    for (p=0; p<choosablePerks.length+offset; ) {
         p = p-offset;
         perk = choosablePerks[p];
-        if (currentPlant.passiveperks.includes(perk)) {
-            index = choosablePerks.indexOf(perk);
-            choosablePerks.splice(index, 1);
-            willoffset = true;
+        for (pp in currentPlant.passiveperks) { //pp LMAO
+            if (currentPlant.passiveperks[pp].name == perk.name) {
+                index = choosablePerks.indexOf(perk);
+                choosablePerks.splice(index, 1);
+                willoffset = true;
+            }
         }
         if (characterPerks.includes(perk)) {
             if (perk.plantName != currentPlant.name || currentPlant.characterperk.name == perk.name) {
@@ -2060,7 +2063,7 @@ function ChooseAPerk(chosenPerks=[]) {
             }
         }
         if (abilityPerks.includes(perk)) {
-            if (perk.plantName != currentPlant.name || currentPlant.abilityperk.name == perk.name) {
+            if ((perk.plantName != currentPlant.name && perk.plantName != "") || currentPlant.abilityperk.name == perk.name) {
                 index = choosablePerks.indexOf(perk);
                 if (index > -1) {
                     choosablePerks.splice(index, 1);
@@ -2580,9 +2583,7 @@ function UpdateTurnCount() {
     if (CanAbility[1]) {
         al += 1;
     }
-    if (CanMove) {
-        ml += 1;
-    }
+    ml += MovesLeft;
     if (al>1 || al == 0) {
         ap = "ies";
     }
@@ -2605,8 +2606,11 @@ function UpdateTicks() {
         if (zombie.tickgiver != "") {
             CreateConsoleText(zombie.name+" has taken "+zombie.tickgiver.effectDamage+" "+zombie.tickgiver.effectType+" damage.") 
             zombie.health -= Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult);
-            UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult));
+            if (zombie.health > 0) {
+                UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult));
+            }
             if (zombie.health <= 0) {
+                UpdatePassivePerks("everyattack",Math.round(zombie.tickgiver.effectDamage*currentPlant.dmgmult)+zombie.health);
                 CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
                 RemoveZombie(zombie); 
                 zombiedead = true;
@@ -2771,7 +2775,7 @@ function UpdatePassivePerks(perkrate,value=false) {
         }
         else if (perk.updaterate == "everyattack" && perk.updaterate == perkrate) {
             if (perk.type == "heal" && currentPlant.permhealth-currentPlant.health != 0) {
-                hpgain = Math.round(value*currentPlant.dmgmult*perk.values[perk.level-1])
+                hpgain = Math.round(value*perk.values[perk.level-1])
                 if (currentPlant.health+hpgain > currentPlant.permhealth) {
                     CreateConsoleText(currentPlant.name+" has healed for "+(currentPlant.permhealth-currentPlant.health)+" health.")
                     currentPlant.health = Object.assign(currentPlant.permhealth);
@@ -2829,8 +2833,11 @@ function UpdatePassivePerks(perkrate,value=false) {
         else if (perk.updaterate == "everymove" && perk.updaterate == perkrate) {
             CreateConsoleText(currentPlant.name+" has bumped into "+value.name+" for "+Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult)+" damage."); 
             value.health -= Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult);
-            UpdatePassivePerks("everyattack",Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult));
+            if (value.health > 0) {
+                UpdatePassivePerks("everyattack",Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult));
+            }
             if (value.health <= 0) {
+                UpdatePassivePerks("everyattack",Math.floor(perk.values[perk.level-1]*currentPlant.dmgmult)+value.health);
                 CreateConsoleText(currentPlant.name+" has vanquished "+value.name+".") 
                 if (value.underShield == "")
                     rv = "kill";
@@ -2865,7 +2872,7 @@ function UpdatePassivePerks(perkrate,value=false) {
         return "miss";
     }
 }
-class PassivePerk {
+class PassivePerk { 
     constructor() {
         this.name = ""; //fucked 
         this.desc = ""; //up  
@@ -2879,6 +2886,7 @@ class PassivePerk {
         this.sprite = ""; //Dr. Perky > Sprite
     }
 }
+
 passivePerks = [];
 attacksToFix = [];
 SelfHeal = new PassivePerk();
@@ -3188,7 +3196,8 @@ Trebhum.aliveSprite = "Trebhum.PNG";
 Trebhum.iconSprite = "TrebhumIcon.PNG";
 currentPlant = AC;
 plantArray = [AC,Peashoot,JadeCac];
-class CharOrAbilityPerk {
+
+class CharOrAbilityPerk { //*add hyper, chomp cannon, snow pea, hot rod
     constructor() {
         this.name = "";  
         this.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";  
@@ -3204,8 +3213,36 @@ class CharOrAbilityPerk {
         this.removeprimary = true;
     }
 }
+// Charge (Ability)
+// Your next attack will do 25% more damage. (Charges will stack) (Cooldown: None)
+// (Level 2): 10% chance to not consume action move
+// (Level 3): Attack boost raised to 50%
+// Hyper (Ability) (Usable by Rock Pea)
+// Gain 3 extra movement moves this turn. (Cooldown: 2 turns)
+// (Level 2): Extra movement moves raised to 4
+// (Level 3): Gain 2 extra movement moves the turn after using Hyper
 abilityPerks = [];
 characterPerks = [];
+Charge = new SupportType();
+Charge.type = "dmgmult";
+Charge.name = "Charge"
+Charge.desc = "Your next attack will do 25% more damage. (Charges will stack) <br>Dmg increase: 25% ∫ No cooldown"
+Charge.dmgmultincrease = 1.25;
+Charge.reloadTime = -1;
+Charge.stacks = true;
+Charge.displaySprite = "Charge.PNG";
+ChargePerk = new CharOrAbilityPerk();
+ChargePerk.name = "Charge";
+ChargePerk.desc = "Gain the Charge ability, which can be used to increase your damage output but will cost you an attack move.";
+ChargePerk.newdescs = [["Your next attack will do 25% more damage. (Charges will stack) <br>Dmg increase: 25% ∫ No cooldown",
+"Your next attack will do 35% more damage. (Charges will stack) <br>Dmg increase: 35% ∫ No cooldown",
+"Your next attack will do 50% more damage. (Charges will stack) <br>Dmg increase: 50% ∫ No cooldown"]];
+ChargePerk.levelstats = ["Attack boost is 25%","Attack boost raised to 35%","Attack boost raised to 50%"];
+ChargePerk.values = [1.25,1.35,1.5];
+ChargePerk.newabilities = [Charge];
+ChargePerk.sprite = "Charge.PNG";
+ChargePerk.removeprimary = false;
+abilityPerks.push(ChargePerk); 
 DarkBean = new AttackType();
 DarkBean.name = "Dark Bean Bomb"; 
 DarkBean.damage = 75;
@@ -3426,6 +3463,9 @@ function ApplyCharOrAbilityPerk(cp) { //haha funni child secks
     if (cp.name == "Grody Goop") {
         cp.newabilities[0].directEffectDuration = cp.values[cp.level-1];
         cp.newabilities[0].effectBonus = cp.values2[cp.level-1]; 
+    }
+    if (cp.name == "Charge") {
+        cp.newabilities[0].dmgmultincrease = cp.values[cp.level-1];
     }
     if (cp.removeprimary) {
         for (p in currentPlant.primaries) {
@@ -4167,11 +4207,11 @@ function CheckIfCollision(p,zombi) {
     for (z in ZombieArray) {
         if ((ZombieArray[z].coords[0] == currentPlant.coords[0]) && (ZombieArray[z].coords[1] == currentPlant.coords[1])) {
             if (p == "plant") {
-                CanMove = false;
+                MovesLeft -= 1;
                 rv = UpdatePassivePerks("everymove",ZombieArray[z])
                 if (rv == "miss") { 
                     CreateConsoleText("You cannot move on top of a zombie.",false,false)
-                    CanMove = true;
+                    MovesLeft += 1;
                     currentPlant.coords = prevppos.slice(0); 
                 }
                 else if (rv == "hit") {
@@ -4792,7 +4832,7 @@ function PlantTurn() {
         UpdatePassivePerks("everyturn");
         IsPlayerTurn = true;
         ConsoleHistory.push("~ Plant's Turn ~");
-        CanMove = true;
+        MovesLeft = 1;
         CanAbility = [true, true];
         abilitybuttons.style.display = "block";
         UpdateTurnCount();
@@ -4881,7 +4921,7 @@ function ZombieTurn(z) {
                                             UpdatePassivePerks("everyturn");
                                             IsPlayerTurn = true;
                                             ConsoleHistory.push("~ Plant's Turn ~");
-                                            CanMove = true;
+                                            MovesLeft = 1;
                                             abilitybuttons.style.display = "block";
                                             UpdateTurnCount();
                                             SaveGame();
@@ -4993,7 +5033,7 @@ function ZombieTurn(z) {
                                                 UpdatePassivePerks("everyturn");
                                                 IsPlayerTurn = true;
                                                 ConsoleHistory.push("~ Plant's Turn ~");
-                                                CanMove = true;
+                                                MovesLeft = 1;
                                                 abilitybuttons.style.display = "block";
                                                 UpdateTurnCount();
                                                 SaveGame();
@@ -5046,7 +5086,7 @@ function SortZArray() {
 }
 
 function tryToMove() {
-    if (CanMove && IsPlayerTurn) {
+    if (MovesLeft>0 && IsPlayerTurn) {
         prevppos = currentPlant.coords.slice(0);
         newspot = [griditemarray[phygriditems.indexOf(event.target)].codx,griditemarray[phygriditems.indexOf(event.target)].cody];
         gs = false;
@@ -5062,7 +5102,7 @@ function tryToMove() {
         }
         currentPlant.coords[0] = newspot[0];
         currentPlant.coords[1] = newspot[1];
-        CanMove = false;
+        MovesLeft -= 1;
         if (CheckIfCollision("plant","")) {
             return;
         }
@@ -5089,7 +5129,7 @@ function tryToMove() {
         }
         if (!(gs)) {
             CreateConsoleText("You cannot move there.",false,false);
-            CanMove = true;
+            MovesLeft += 1;
         }
         else {
             currentPlant.coords[0] = newspot[0];
@@ -5102,7 +5142,7 @@ function tryToMove() {
 }
 
 document.addEventListener('keydown', function(event) {
-    if (CanMove && IsPlayerTurn) {
+    if (MovesLeft>0 && IsPlayerTurn) {
         prevppos = currentPlant.coords.slice(0);
         if(event.keyCode == 37) {
             if (currentPlant.coords[0] > 1) {
@@ -5157,7 +5197,7 @@ document.addEventListener('keydown', function(event) {
             } 
         }
         if (event.keyCode == 37 || event.keyCode == 38 || event.keyCode == 39 || event.keyCode == 40) {
-            CanMove = false;
+            MovesLeft -= 1;
             UpdateTurnCount();
             CheckZindexes();
             updategrid();
