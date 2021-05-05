@@ -108,25 +108,17 @@ if (SettingData == null) {
 currentVolume = SettingData[0];
 turntime = (18.5*SettingData[1])+150;
 SoundArray = [loss, win, Ultwin, LogoSound, FightSound, ZombieTurnTheme, PlantTurnTheme, MenuTheme, AlmanacTheme, PerkTheme];
-News = "Yoooo new update?? Epic epic cool (you've probably already noticed some of the new features)<br><br>\
+News = "Hi Frosty :)<br><br>\
 New features:<br>\
-A perks system! Now after you beat a boss wave, you get to choose a perk to equip. This perk will change your primary, gain you a new ability, or grant a buff to increase your overall strength so that you can survive even longer.<br>\
-Epic cool backgrounds and colours to stimulate your brain via visual input.<br>\
-Added an almanac! Now you can view the descriptions and abilities of all the plants and zombies in the game that you have encountered.<br>\
-Peashooter is now Rock Pea.<br>\
-Status effect graphics (Gooped, Frozen, etc.) now look different.<br>\
-Squash Zombie has now been deleted and replaced with a new Zombotany Zombie.<br>\
-There is now a Yeti Imp in the Wave of Imps boss wave.<br>\
-Other stuff I forgot probably.<br>\
+Jade cacus<br>\
 <br>\
 Bug fixes:<br>\
-Fixed bug where zombies wouldn’t use their ranged attack if they were within range of their melee attack.<br>\
-Fixed bug where you could give yourself infinite health.<br>\
+a<br>\
 <br>\
 Balance changes:<br>\
-All of your abilities now have a 100% chance to hit, zombies can still miss though.<br>\
-Cone Crabs can now duplicate sooner.<br>\
-Coneoisseur’s melee attack is now stronger.<br>";
+Swallow now can’t instantly be used after eating a zombie.<br>\
+Disco Zombie now takes a bit longer to summon backup.<br>\
+Coneoisseur’s cones how have less health, but the Coneoisseur himself has more health.";
 function RemoveBlocker() {
     wc.removeChild(document.getElementById("MenuBlocker"))
     wc.removeChild(document.getElementById("MenuLoader"))
@@ -180,7 +172,7 @@ function LoadNew() {
     Message.appendChild(CloseButton);
     MessageHeader = document.createElement("p");
     MessageHeader.className = "MessageHeader";
-    MessageHeader.innerHTML = "What's new in Version 1.9.0";
+    MessageHeader.innerHTML = "What's new in Version 2.0.0";
     Message.appendChild(MessageHeader);
     MessageText = document.createElement("p");
     MessageText.className = "MessageText";
@@ -440,7 +432,7 @@ function BackToMenu() {
     wc.appendChild(MenuBackground);
     vc = document.createElement("div");
     vc.id="VersionCount";
-    vc.innerHTML="Beta Version 1.9.0";
+    vc.innerHTML="Beta Version 2.0.0";
     wc.appendChild(vc);
     tc = document.createElement("div");
     tc.id="TitleContainer";
@@ -453,6 +445,10 @@ function BackToMenu() {
     lc.innerHTML="Highest wave you've reached: "+HighScore;
     lc.id="BonusText";
     wc.appendChild(lc);
+    jcl = document.createElement("img")
+    jcl.src = "JadeRight.PNG"; 
+    jcl.id="PlantLeft2"
+    wc.appendChild(jcl);
     acl = document.createElement("img")
     acl.src = "PlantLeft.PNG"; 
     acl.id="PlantLeft"
@@ -983,24 +979,38 @@ function DoDamage(zombie, damageprojectile,poses=[]) {
         //CreateConsoleText(currentPlant.name+" enjoyed that tasty corn snack, but next time aim for the zombies.");
         //return zombiedead;
     //}
-    if (damageprojectile.name == Swallow.name) {
+    if (damageprojectile.name == Swallow.name || damageprojectile.name == TrebhumInhale.name) { 
         if (zombie.canBeEaten) {
             CanAbility = [false,false];
             zombiedead = true;
             zombiehit = true;
+            if (currentPlant.name == "Trebhum") { 
+                currentPlant.health += Math.round(zombie.health/2)
+                currentPlant.attacks = currentPlant.attacks.filter(function(x) {
+                    return x.desc !== "";
+                });
+                for (a in zombie.attacks) {
+                    attack = zombie.attacks[a];
+                    currentPlant.attacks.push(zombie.attacks[a])
+                }
+            }
             UpdateTurnCount();
-            CreateConsoleText("Armor Chomper has ate "+zombie.name+".");
+            CreateConsoleText(currentPlant.name+" has ate "+zombie.name+".");
             currentPlant.chewing = true;
             currentPlant.chewingtime = zombie.chewingtime+1;
             fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "chewy.gif";
             currentPlant.allergy = zombie.allergy;
             RemoveZombie(zombie);
             if (!(CheckForWin())) {
-                CreateConsoleText("Armor Chomper will be chewing for "+(currentPlant.chewingtime-1)+" turn(s).");
+                if (currentPlant.name == "Trebhum") {
+                    SaveGame();
+                    LoadGame();
+                }
+                CreateConsoleText(currentPlant.name+" will be chewing for "+(currentPlant.chewingtime-1)+" turn(s).");
             }
         }
         else {
-            CreateConsoleText("Armor Chomper is unable to eat "+zombie.name+"s.");
+            CreateConsoleText(currentPlant.name+" is unable to eat "+zombie.name+"s.");
             if (!CanAbility[0]) {
                 CanAbility[0] = true;
             }
@@ -1081,6 +1091,9 @@ function FireSupport(support) {
         else {
             CreateConsoleText("This ability will be ready in "+support.TimeUntilReady+" turn(s).",false,false); 
         }
+    }
+    else if (!(support.stacks) && currentPlant.currentSupports.includes(support)) {
+        CreateConsoleText("You cannot use this ability as it is already currently active.",false,false); 
     }
     else {
         CreateConsoleText(currentPlant.name+" has used "+support.name+".");
@@ -1518,7 +1531,7 @@ function LoadGame() {
     currentPlant.chewing = false;
     if (PlantData[4] != 0) {
         currentPlant.chewing = true;
-        currentPlant.aliveSprite = "chewy.gif";
+        //currentPlant.aliveSprite = "chewy.gif";
         fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "chewy.gif";
         CanAbility = [false, false];
     }
@@ -2577,7 +2590,7 @@ function UpdateTurnCount() {
         mp = "s";
     }
     if (currentPlant.name[currentPlant.name.length-1] == "s") {
-        turncounter.innerHTML = currentPlant.name+"' Turn: "+ml+" move"+mp+" left and "+al+" abilit"+ap+" left"; //*Cactus's
+        turncounter.innerHTML = currentPlant.name+"' Turn: "+ml+" move"+mp+" left and "+al+" abilit"+ap+" left"; 
     }
     else {
         turncounter.innerHTML = currentPlant.name+"'s Turn: "+ml+" move"+mp+" left and "+al+" abilit"+ap+" left"; 
@@ -2871,8 +2884,8 @@ attacksToFix = [];
 SelfHeal = new PassivePerk();
 SelfHeal.name = "Happy Heart";
 SelfHeal.desc = "Regain a small amount of health at the start of your turn.";
-SelfHeal.levelstats = ["Health Gained: 10","Health Gained: 20","Health Gained: 35"]
-SelfHeal.values = [10,20,35];
+SelfHeal.levelstats = ["Health Gained: 5","Health Gained: 15","Health Gained: 25"]
+SelfHeal.values = [5,15,25];
 SelfHeal.updaterate = "everyturn";
 SelfHeal.type = "heal";
 SelfHeal.sprite = "SelfHeal.PNG"
@@ -2880,8 +2893,8 @@ passivePerks.push(SelfHeal);
 SuckHeal = new PassivePerk();
 SuckHeal.name = "HP Drain";
 SuckHeal.desc = "Convert a fraction of the damage you deal into health.";
-SuckHeal.levelstats = ["DtH Conversion: 10%","DtH Conversion: 17%","DtH Conversion: 25%"]
-SuckHeal.values = [0.1,0.17,0.25];
+SuckHeal.levelstats = ["DtH Conversion: 5%","DtH Conversion: 10%","DtH Conversion: 15%"]
+SuckHeal.values = [0.05,0.1,0.15];
 SuckHeal.updaterate = "everyattack";
 SuckHeal.type = "heal";
 SuckHeal.sprite = "SuckHeal.PNG"
@@ -2975,13 +2988,14 @@ class AttackType {
         this.displaySprite = ""; //sprite displaying ability
     }
 }
-class SupportType { //*make primary damge increase suport tipe for jade cocktus
+class SupportType { 
     constructor() {
         this.type = "";
         this.name = "";
         this.desc = "";
         this.dmgmultincrease = 1;
         this.primary = false;
+        this.stacks = false;
         this.zombie = ""; //the zombie to summon
         this.coords = []; //the coordinates of the zombies in comparision to the base zombie
         this.reloadTime = -1; //how many turns it takes until it's ready again
@@ -3062,7 +3076,7 @@ Swallow = new AttackType();
 Swallow.name = "Swallow";
 Swallow.desc = "Open up your mouth and eat the zombie in front of you. <br>Dmg: Infinite ∫ Range: Melee (1 space) ∫ Cooldown: 1 turn ∫ Armor Chomper cannot attack for 1 turn";
 Swallow.range = 1;
-Swallow.reloadTime = 1;
+Swallow.reloadTime = 2;
 Swallow.displaySprite = "SwallowIcon.PNG";
 AC = new Fighter();
 AC.plant = true;
@@ -3124,10 +3138,11 @@ Shatter.displaySprite = "ShatterIcon.PNG";
 Precision = new SupportType();
 Precision.type = "dmgmult";
 Precision.name = "Enhanced Precision"
-Precision.desc = "Your primary attack (Shatter Shot) will do double the damage next time you use it. <br>Dmg increase: 2x ∫ Cooldown: 3 turns"
-Precision.dmgmultincrease = 2;
+Precision.desc = "Your primary attack (Shatter Shot) will do a lot more damage next time you use it. (Charges do not stack) <br>Dmg increase: 2.5x ∫ Cooldown: 2 turns"
+Precision.dmgmultincrease = 2.5;
 Precision.primary = true;
-Precision.reloadTime = 3;
+Precision.reloadTime = 2;
+Precision.displaySprite = "PrecisionIcon.PNG";
 Corn = new AttackType();
 Corn.name = "Corn Strike";
 Corn.desc = "Click anywhere on the board to activate a Corn Strike there, dropping exposive corn cobs down on the zombies. <br>Dmg: 100 ∫ Splash Dmg: 50 ∫ Splash Radius: 3 by 3 ∫ Range: Everywhere ∫ Cooldown: 3 turns";
@@ -3153,6 +3168,24 @@ JadeCac.attacks.push(Shatter,Precision,Corn);
 JadeCac.primaries = [Shatter];
 JadeCac.aliveSprite = "JadeCactus.PNG";
 JadeCac.iconSprite = "JadeRight.PNG";
+//dlc
+TrebhumInhale = new AttackType();
+TrebhumInhale.name = "Trunk Suck"; 
+TrebhumInhale.desc = "your Trebhum sucks up a zombie with their trunk, gaining the zombie's abilities.";
+TrebhumInhale.range = 1;
+TrebhumInhale.reloadTime = 3;
+TrebhumInhale.displaySprite = "TrebhumInhale.PNG";
+Trebhum = new Fighter();
+Trebhum.plant = true;
+Trebhum.name = "Trebhum";
+Trebhum.health = 150;
+Trebhum.permhealth = 150;
+Trebhum.powerLevel = 9001;
+Trebhum.height = "18%";
+Trebhum.chewingtime = 0;
+Trebhum.attacks.push(TrebhumInhale); 
+Trebhum.aliveSprite = "Trebhum.PNG";
+Trebhum.iconSprite = "TrebhumIcon.PNG";
 currentPlant = AC;
 plantArray = [AC,Peashoot,JadeCac];
 class CharOrAbilityPerk {
@@ -3611,7 +3644,7 @@ Dancers.name = "Summon Backup";
 Dancers.zombie = [Backup]
 Dancers.coords = [[-1,0],[1,0],[0,-1],[0,1]];
 Dancers.reloadTime = 2;
-Dancers.STUP = 2;
+Dancers.STUP = 3;
 Disco = new Fighter();
 Disco.name = "Disco Zombie";
 Disco.health = 150;
@@ -3812,8 +3845,8 @@ ConeCrab.supports.push(Mitosis,Mitosis2,Mitosis3,Mitosis4);
 ConeCrab.aliveSprite = "ConeCrab.PNG";  
 Coneoisseur = new Fighter();
 Coneoisseur.name = "Coneoisseur";
-Coneoisseur.health = 50;
-Coneoisseur.permhealth = 50;
+Coneoisseur.health = 25;
+Coneoisseur.permhealth = 25;
 Coneoisseur.powerLevel = 4;
 Coneoisseur.height = "35%";
 Coneoisseur.wb = 0.8;
@@ -3821,6 +3854,8 @@ Coneoisseur.attacks.push(Fashion,ConeGun);
 Coneoisseur.aliveSprite = "Coneoisseur.PNG"; 
 Coneoisseur5 = clone(Coneoisseur);
 Coneoisseur5.underShield = "";
+Coneoisseur5.health = 125;
+Coneoisseur5.permhealth = 125;
 Coneoisseur5.aliveSprite = "Coneoisseur5.PNG";
 Coneoisseur4 = clone(Coneoisseur);
 Coneoisseur4.underShield = clone(Coneoisseur5);
@@ -4810,7 +4845,7 @@ function ZombieTurn(z) {
                                         UpdatePassivePerks("everyturn");
                                         ZombieTurn(0);
                                         if (currentPlant.chewing) {
-                                            currentPlant.aliveSprite = "chewy.gif";
+                                            //currentPlant.aliveSprite = "chewy.gif";
                                             fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "chewy.gif";   
                                         }
                                         fighterPhysArray[fighterArray.indexOf(currentPlant)].style.filter = "";
@@ -4823,16 +4858,14 @@ function ZombieTurn(z) {
                                     if (currentPlant.chewingtime == 0) {
                                         currentPlant.chewing = false;
                                         if (currentPlant.allergy == false) {
-                                        currentPlant.aliveSprite = "ArmorChomper.PNG";
-                                        fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
-                                        CreateConsoleText("Armor Chomper has finished chewing.");
+                                        fighterPhysArray[fighterArray.indexOf(currentPlant)].src = currentPlant.aliveSprite;
+                                        CreateConsoleText(currentPlant.name+" has finished chewing.");
                                         if (!(CriticalStage) && !(IsBossWave)) {
                                             PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                             MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                         }
                                         PlantTurn();
-                                        currentPlant.aliveSprite = "ArmorChomper.PNG";
-                                        fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
+                                        fighterPhysArray[fighterArray.indexOf(currentPlant)].src = currentPlant.aliveSprite;
                                         }
                                         else {
                                             DeathByAllergy(currentPlant.allergy);
@@ -4853,7 +4886,7 @@ function ZombieTurn(z) {
                                             UpdateTurnCount();
                                             SaveGame();
                                         }, 500)
-                                        CreateConsoleText("Armor Chomper cannot attack as they are chewing.");
+                                        CreateConsoleText(currentPlant.name+" cannot attack as they are chewing.");
                                     }
                                 }, turntime);
                             }
@@ -4924,7 +4957,7 @@ function ZombieTurn(z) {
                                             UpdatePassivePerks("everyturn");
                                             ZombieTurn(0);
                                             if (currentPlant.chewing) {
-                                                currentPlant.aliveSprite = "chewy.gif";
+                                                //currentPlant.aliveSprite = "chewy.gif";
                                                 fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "chewy.gif";   
                                             }
                                             fighterPhysArray[fighterArray.indexOf(currentPlant)].style.filter = "";
@@ -4937,16 +4970,14 @@ function ZombieTurn(z) {
                                         if (currentPlant.chewingtime == 0) {
                                             currentPlant.chewing = false;
                                             if (currentPlant.allergy == false) {
-                                            currentPlant.aliveSprite = "ArmorChomper.PNG";
-                                            fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
-                                            CreateConsoleText("Armor Chomper has finished chewing.");
+                                            fighterPhysArray[fighterArray.indexOf(currentPlant)].src = currentPlant.aliveSprite;
+                                            CreateConsoleText(currentPlant.name+" has finished chewing.");
                                             if (!(CriticalStage) && !(IsBossWave)) {
                                                 PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                                 MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                             }
                                             PlantTurn();
-                                            currentPlant.aliveSprite = "ArmorChomper.PNG";
-                                            fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "ArmorChomper.PNG";
+                                            fighterPhysArray[fighterArray.indexOf(currentPlant)].src = currentPlant.aliveSprite;
                                             }
                                             else {
                                                 DeathByAllergy(currentPlant.allergy);
@@ -4967,7 +4998,7 @@ function ZombieTurn(z) {
                                                 UpdateTurnCount();
                                                 SaveGame();
                                             }, 500)
-                                            CreateConsoleText("Armor Chomper cannot attack as they are chewing.");
+                                            CreateConsoleText(currentPlant.name+" cannot attack as they are chewing.");
                                         }
                                     }, turntime);
                                 }

@@ -316,6 +316,14 @@
       left:6%; 
       top:25%;
   }
+
+  #PlantLeft2 {
+    position:absolute; 
+    width:auto;
+    height:68%;
+    left:0%; 
+    top:0%;
+}
   
   .MenuButton {
     width:10.5vw;
@@ -466,7 +474,7 @@
   width: 77px;
   height: 86px;
   border: 0;
-  background: url('SunflowerSlider.PNG');
+  background: url('ChomperSlider.PNG');
   cursor: pointer;
 }
 
@@ -474,7 +482,7 @@
   /*width: 100%;*/
   height: 100%;
   border: 0;
-  background: url('SunflowerSlider.PNG');
+  background: url('ChomperSlider.PNG');
   cursor: pointer;
 }
 
