@@ -766,7 +766,7 @@ function StartGame() {
     fighterPhysArray[fighterArray.indexOf(tz)].style.transform = "scaleX(1)";
     IsPlayerTurn = true;
     ConsoleHistory.push("~ Plant's Turn ~");
-    MovesLeft = 1; //*make modifyable amount of abilities
+    MovesLeft = parseInt(currentPlant.movement)+0; //*make modifyable amount of abilities
     CanAbility = [true, true];
     ResetPerks();
     UpdateTurnCount();
@@ -1528,7 +1528,7 @@ function LoadGame() {
         currentPlant.attacks[attack].TimeUntilReady = PlantData[0][attack];
     }
     IsPlayerTurn = true; 
-    MovesLeft = 1;
+    MovesLeft = parseInt(currentPlant.movement)+0;
     CanAbility = [true, true];
     currentPlant.chewingtime = PlantData[4];
     currentPlant.chewing = false;
@@ -1541,6 +1541,10 @@ function LoadGame() {
     else {
         currentPlant.aliveSprite = currentPlant.name.replace(/\s/g, '')+".PNG";
         fighterPhysArray[fighterArray.indexOf(currentPlant)].src = currentPlant.name.replace(/\s/g, '')+".PNG";
+    }
+    if (currentPlant.movestunned) {
+        MovesLeft = 0;
+        fighterPhysArray[fighterArray.indexOf(currentPlant)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) saturate(225%)";
     }
     prevppos = currentPlant.coords.slice(0);
     currentProjectile = "";
@@ -1676,7 +1680,7 @@ function ResetGame() {
     StopAllSounds();
     IsPlayerTurn = true;
     ConsoleHistory.push("~ Plant's Turn ~");
-    MovesLeft = 1;
+    MovesLeft = parseInt(currentPlant.movement)+0;
     CanAbility = [true, true];
     currentPlant.chewing = false;
     currentPlant.chewingtime = 0;
@@ -2273,27 +2277,33 @@ function ViewPerk(perk, chosenPerks) {
             SaveGame();
             document.getElementById("ViewingPerk").remove();
             document.getElementById("UpgradePerk").remove();
-            UpgradeAPerk(chosenPerks);
+            UpgradeAPerk(chosenPerks, 1);
         }
-        else if (abilityPerks.includes(perk)) {
-            currentPlant.abilityperk = "";
-            perk.level = 1;
-            SaveGame();
+        else if (currentPlant.abilityperk == perk) { 
             currentPlant.attacks.pop();
+            perk.level = 1;
+            ApplyCharOrAbilityPerk(perk);
+            currentPlant.abilityperk = "";
+            currentPlant.attacks.pop();
+            SaveGame();
             document.getElementById("ViewingPerk").remove();
             document.getElementById("UpgradePerk").remove();
-            UpgradeAPerk(chosenPerks);
+            UpgradeAPerk(chosenPerks, 2);
         }
-        else {
-            currentPlant.characterperk = "";
-            perk.level = 1;
-            SaveGame();
+        else if (currentPlant.characterperk == perk) {
             for (p in currentPlant.primaries) {
                 currentPlant.attacks[p] = currentPlant.primaries[p];
             }
+            perk.level = 1;
+            ApplyCharOrAbilityPerk(perk);
+            currentPlant.characterperk = "";
+            for (p in currentPlant.primaries) {
+                currentPlant.attacks[p] = currentPlant.primaries[p];
+            }
+            SaveGame();
             document.getElementById("ViewingPerk").remove();
             document.getElementById("UpgradePerk").remove();
-            UpgradeAPerk(chosenPerks);
+            UpgradeAPerk(chosenPerks, 2);
         }
     }
     Message.appendChild(DelPerk);
@@ -3231,7 +3241,6 @@ characterPerks = [];
 Charge = new SupportType();
 Charge.type = "dmgmult";
 Charge.name = "Charge"
-Charge.desc = "Your next attack will do 25% more damage. (Charges will stack) <br>Dmg increase: 25% ∫ No cooldown"
 Charge.dmgmultincrease = 1.25;
 Charge.reloadTime = -1;
 Charge.stacks = true;
@@ -3248,11 +3257,9 @@ ChargePerk.newabilities = [Charge];
 ChargePerk.sprite = "Charge.PNG";
 ChargePerk.removeprimary = false;
 abilityPerks.push(ChargePerk); 
-
 Hyper = new SupportType();
 Hyper.type = "movement";
 Hyper.name = "Hyper"
-Hyper.desc = "Rock Pea gains 3 more movement moves this turn, allowing you to move 3 more spaces. <br>Bonus Movement Moves: 3 ∫ Cooldown: 2 turns"
 Hyper.movementincrease = 3;
 Hyper.reloadTime = 2;
 Hyper.displaySprite = "HyperIcon.PNG";
@@ -3261,14 +3268,14 @@ HyperPerk.name = "Hyper";
 HyperPerk.desc = "(Only usable by Rock Pea) Rock Pea gains the Hyper ability, which makes him move a lot faster for one turn.";
 HyperPerk.newdescs = [["Rock Pea gains 3 more movement moves this turn, allowing you to move 3 more spaces. <br>Bonus Movement Moves: 3 ∫ Cooldown: 2 turns",
 "Rock Pea gains 4 more movement moves this turn, allowing you to move 4 more spaces. <br>Bonus Movement Moves: 4 ∫ Cooldown: 2 turns",
-"Rock Pea gains 5 more movement moves this turn, allowing you to move 5 more spaces. <br>Bonus Movement Moves: 5 ∫ Cooldown: 2 turns"]];
-HyperPerk.levelstats = ["Gain 3 extra movement moves this turn. (Cooldown: 2 turns)","Extra movement moves raised to 4","Extra movement moves raised to 5"];
-HyperPerk.values = [3,4,5];
+"Rock Pea gains 4 more movement moves this turn, as well as a bonus 1 movement move at the start of each turn. <br>Bonus Movement Moves Per Turn: 1 ∫ Bonus Movement Moves Upon Use: 4 ∫ Cooldown: 2 turns"]];
+HyperPerk.levelstats = ["Gain 3 extra movement moves this turn. (Cooldown: 2 turns)","Extra movement moves raised to 4","Rock Pea now gets 1 extra movement move every turn."];
+HyperPerk.values = [3,4,4];
+HyperPerk.values2 = [1,1,2];
 HyperPerk.newabilities = [Hyper];
 HyperPerk.sprite = "Hyper.PNG";
 HyperPerk.removeprimary = false;
 abilityPerks.push(HyperPerk); 
-
 DarkBean = new AttackType();
 DarkBean.name = "Dark Bean Bomb"; 
 DarkBean.damage = 75;
@@ -3495,6 +3502,7 @@ function ApplyCharOrAbilityPerk(cp) { //haha funni child secks
     }
     if (cp.name == "Hyper") {
         cp.newabilities[0].movementincrease = cp.values[cp.level-1];
+        currentPlant.movement = cp.values2[cp.level-1];
     }
     if (cp.removeprimary) {
         for (p in currentPlant.primaries) {
@@ -3516,7 +3524,6 @@ function ApplyCharOrAbilityPerk(cp) { //haha funni child secks
         currentPlant.abilityperk = cp;
     }
 }
-//ApplyCharOrAbilityPerk(FireChomp);
 //zombie attacks 
 Bite = new AttackType();
 Bite.name = "Bite";
@@ -3949,7 +3956,8 @@ class BossWave {
         this.theme = ""; //theme to play during the boss wave
         this.background = []; //secret cone stuff
     }
-} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 4 waves on turn 30 //*make it higher waves go!
+} //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 4 waves on turn 30, 2 waves on turn 35
+//*add technology wave
 AllImps = new BossWave();
 AllImps.name = "Wave of Imps";
 AllImps.zombies = [Imp, ImpKing, clone(Imp), YetiImp, clone(Imp), clone(ImpKing), clone(Imp)]; 
@@ -4861,7 +4869,7 @@ function PlantTurn() {
         UpdatePassivePerks("everyturn");
         IsPlayerTurn = true;
         ConsoleHistory.push("~ Plant's Turn ~");
-        MovesLeft = 1;
+        MovesLeft = parseInt(currentPlant.movement)+0;
         CanAbility = [true, true];
         abilitybuttons.style.display = "block";
         UpdateTurnCount();
@@ -4919,24 +4927,6 @@ function ZombieTurn(z) {
                                         }
                                         fighterPhysArray[fighterArray.indexOf(currentPlant)].style.filter = "";
                                     }
-                                    else if (currentPlant.movestunned) {
-                                        if (!(CriticalStage) && !(IsBossWave)) {
-                                            PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
-                                            MusicFade(ZombieTurnTheme,PlantTurnTheme);
-                                        }
-                                        setTimeout(function() {
-                                            UpdateTicks();
-                                            UpdatePassivePerks("everyturn");
-                                            IsPlayerTurn = true;
-                                            ConsoleHistory.push("~ Plant's Turn ~");
-                                            MovesLeft = 0;
-                                            CanAbility = [true, true];
-                                            abilitybuttons.style.display = "block";
-                                            UpdateTurnCount();
-                                            SaveGame();
-                                        }, 500)
-                                        CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
-                                    }
                                 }, 1500);
                             }
                             if (currentPlant.chewing && !(currentPlant.stunned)) {
@@ -4968,7 +4958,12 @@ function ZombieTurn(z) {
                                             UpdatePassivePerks("everyturn");
                                             IsPlayerTurn = true;
                                             ConsoleHistory.push("~ Plant's Turn ~");
-                                            MovesLeft = 1;
+                                            if (currentPlant.movestunned) {
+                                                currentPlant.movestunned = false;
+                                                MovesLeft = 0;
+                                                CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
+                                            }
+                                            MovesLeft = parseInt(currentPlant.movement)+0;;
                                             abilitybuttons.style.display = "block";
                                             UpdateTurnCount();
                                             SaveGame();
@@ -4976,6 +4971,25 @@ function ZombieTurn(z) {
                                         CreateConsoleText(currentPlant.name+" cannot attack as they are chewing.");
                                     }
                                 }, turntime);
+                            }
+                            else if (currentPlant.movestunned) {
+                                if (!(CriticalStage) && !(IsBossWave)) {
+                                    PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
+                                    MusicFade(ZombieTurnTheme,PlantTurnTheme);
+                                }
+                                setTimeout(function() {
+                                    UpdateTicks();
+                                    UpdatePassivePerks("everyturn");
+                                    IsPlayerTurn = true;
+                                    ConsoleHistory.push("~ Plant's Turn ~");
+                                    MovesLeft = 0;
+                                    CanAbility = [true, true];
+                                    abilitybuttons.style.display = "block";
+                                    UpdateTurnCount();
+                                    SaveGame();
+                                }, 500)
+                                currentPlant.movestunned = false;
+                                CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
                             }
                             else if (!(currentPlant.stunned)) {
                                 if (!(CriticalStage) && !(IsBossWave)) {
@@ -5080,7 +5094,11 @@ function ZombieTurn(z) {
                                                 UpdatePassivePerks("everyturn");
                                                 IsPlayerTurn = true;
                                                 ConsoleHistory.push("~ Plant's Turn ~");
-                                                MovesLeft = 1;
+                                                if (currentPlant.movestunned) {
+                                                    MovesLeft = 0;
+                                                    CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
+                                                }
+                                                MovesLeft = parseInt(currentPlant.movement)+0;;
                                                 abilitybuttons.style.display = "block";
                                                 UpdateTurnCount();
                                                 SaveGame();
@@ -5088,6 +5106,24 @@ function ZombieTurn(z) {
                                             CreateConsoleText(currentPlant.name+" cannot attack as they are chewing.");
                                         }
                                     }, turntime);
+                                }
+                                else if (currentPlant.movestunned) {
+                                    if (!(CriticalStage) && !(IsBossWave)) {
+                                        PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
+                                        MusicFade(ZombieTurnTheme,PlantTurnTheme);
+                                    }
+                                    setTimeout(function() {
+                                        UpdateTicks();
+                                        UpdatePassivePerks("everyturn");
+                                        IsPlayerTurn = true;
+                                        ConsoleHistory.push("~ Plant's Turn ~");
+                                        MovesLeft = 0;
+                                        CanAbility = [true, true];
+                                        abilitybuttons.style.display = "block";
+                                        UpdateTurnCount();
+                                        SaveGame();
+                                    }, 500)
+                                    CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
                                 }
                                 else if (!(currentPlant.stunned)) {
                                     if (!(CriticalStage) && !(IsBossWave)) {
