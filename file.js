@@ -799,7 +799,7 @@ function CreateModal(modalID,modalheader,modaltext,modalimage,modalbuttons) { //
         tempmoves = parseInt(MovesLeft)+0;
         MovesLeft = 0;
         SpecialButton.onclick = function() {
-            MovesLeft = parseInt(tempmoves)+0;
+            MovesLeft += parseInt(tempmoves)+0;
             updategrid();
             UpdateTurnCount();
             document.getElementById("atakmodal").remove();
@@ -1022,7 +1022,6 @@ function DoDamage(zombie, damageprojectile,poses=[]) {
                 UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult));
             }
             if (zombie.health <= 0) {
-                console.log(Math.round(damageprojectile.damage*currentPlant.dmgmult),zombie.health)
                 UpdatePassivePerks("everyattack",Math.round(damageprojectile.damage*currentPlant.dmgmult)+zombie.health);
                 CreateConsoleText(currentPlant.name+" has vanquished "+zombie.name+".") 
                 RemoveZombie(zombie);
@@ -1099,6 +1098,7 @@ function FireSupport(support) {
         CreateConsoleText(currentPlant.name+" has used "+support.name+".");
         currentProjectile.TimeUntilReady = currentProjectile.reloadTime+1; 
         currentPlant.dmgmult *= currentProjectile.dmgmultincrease;
+        MovesLeft += currentProjectile.movementincrease;
         currentPlant.currentSupports.push(support);
         if (CanAbility[0]) {
             CanAbility[0] = false;
@@ -1199,16 +1199,19 @@ function FireProjectile() {
                 }
             }
         }
-        for (s in currentPlant.currentSupports) {
+        for (s in currentPlant.currentSupports) { 
             support = currentPlant.currentSupports[s];
             if (support.primary && currentPlant.primaries[0].name != currentProjectile.name) {
                 currentPlant.dmgmult = currentPlant.dmgmult*support.dmgmultincrease;
             }
             else {
                 currentPlant.dmgmult = currentPlant.dmgmult/support.dmgmultincrease;
-                currentPlant.currentSupports.splice(s, 1);
+                currentPlant.currentSupports[s] = "";
             }
         }
+        currentPlant.currentSupports = currentPlant.currentSupports.filter(function(x) {
+            return x !== "";
+        });
         updategrid();
         UpdateTurnCount();
     }
@@ -2652,13 +2655,13 @@ function ApplyEffects(Fighter1,Fighter2,attack,direct=false) {
             if (Fighter2.effectCooldown <= 0) {
                 CreateConsoleText(Fighter1.name+" has frozen "+Fighter2.name+" for one turn.");
                 fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) saturate(225%)";
-                Fighter2.stunned = true;
+                Fighter2.movestunned = true;
             }
         }
         else if (Fighter2.name != Yeti.name && Fighter2.name != YetiImp.name) {
             CreateConsoleText(Fighter1.name+" has frozen "+Fighter2.name+" for one turn.");
             fighterPhysArray[fighterArray.indexOf(Fighter2)].style.filter = "opacity(0.5) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) drop-shadow(0 0 0 rgb(0, 204, 204)) saturate(225%)";
-            Fighter2.stunned = true;
+            Fighter2.movestunned = true;
         }
     }
     if (attack.effectType == "goop") {
@@ -2892,8 +2895,8 @@ attacksToFix = [];
 SelfHeal = new PassivePerk();
 SelfHeal.name = "Happy Heart";
 SelfHeal.desc = "Regain a small amount of health at the start of your turn.";
-SelfHeal.levelstats = ["Health Gained: 5","Health Gained: 15","Health Gained: 25"]
-SelfHeal.values = [5,15,25];
+SelfHeal.levelstats = ["Health Gained: 5","Health Gained: 10","Health Gained: 20"]
+SelfHeal.values = [5,10,20];
 SelfHeal.updaterate = "everyturn";
 SelfHeal.type = "heal";
 SelfHeal.sprite = "SelfHeal.PNG"
@@ -3002,6 +3005,7 @@ class SupportType {
         this.name = "";
         this.desc = "";
         this.dmgmultincrease = 1;
+        this.movementincrease = 0;
         this.primary = false;
         this.stacks = false;
         this.zombie = ""; //the zombie to summon
@@ -3029,6 +3033,7 @@ class Fighter {
         this.understatus = false; //if the fighter is under a status or not
         this.effectCooldown = 0;
         this.stunned = false; //Im stuff
+        this.movestunned = false;
         this.tickgiver = ""; //how many variables are there jeez
         this.tickTimeLeft = 0;
         this.coords = []; //x and y positions on the grid
@@ -3197,7 +3202,7 @@ Trebhum.iconSprite = "TrebhumIcon.PNG";
 currentPlant = AC;
 plantArray = [AC,Peashoot,JadeCac];
 
-class CharOrAbilityPerk { //*add hyper, chomp cannon, snow pea, hot rod
+class CharOrAbilityPerk { //*add chomp cannon, snow pea, hot rod
     constructor() {
         this.name = "";  
         this.desc = "Uh Oh. The description didn't load! This is not supposed to happen.";  
@@ -3243,6 +3248,27 @@ ChargePerk.newabilities = [Charge];
 ChargePerk.sprite = "Charge.PNG";
 ChargePerk.removeprimary = false;
 abilityPerks.push(ChargePerk); 
+
+Hyper = new SupportType();
+Hyper.type = "movement";
+Hyper.name = "Hyper"
+Hyper.desc = "Rock Pea gains 3 more movement moves this turn, allowing you to move 3 more spaces. <br>Bonus Movement Moves: 3 ∫ Cooldown: 2 turns"
+Hyper.movementincrease = 3;
+Hyper.reloadTime = 2;
+Hyper.displaySprite = "HyperIcon.PNG";
+HyperPerk = new CharOrAbilityPerk();
+HyperPerk.name = "Hyper";
+HyperPerk.desc = "(Only usable by Rock Pea) Rock Pea gains the Hyper ability, which makes him move a lot faster for one turn.";
+HyperPerk.newdescs = [["Rock Pea gains 3 more movement moves this turn, allowing you to move 3 more spaces. <br>Bonus Movement Moves: 3 ∫ Cooldown: 2 turns",
+"Rock Pea gains 4 more movement moves this turn, allowing you to move 4 more spaces. <br>Bonus Movement Moves: 4 ∫ Cooldown: 2 turns",
+"Rock Pea gains 5 more movement moves this turn, allowing you to move 5 more spaces. <br>Bonus Movement Moves: 5 ∫ Cooldown: 2 turns"]];
+HyperPerk.levelstats = ["Gain 3 extra movement moves this turn. (Cooldown: 2 turns)","Extra movement moves raised to 4","Extra movement moves raised to 5"];
+HyperPerk.values = [3,4,5];
+HyperPerk.newabilities = [Hyper];
+HyperPerk.sprite = "Hyper.PNG";
+HyperPerk.removeprimary = false;
+abilityPerks.push(HyperPerk); 
+
 DarkBean = new AttackType();
 DarkBean.name = "Dark Bean Bomb"; 
 DarkBean.damage = 75;
@@ -3466,6 +3492,9 @@ function ApplyCharOrAbilityPerk(cp) { //haha funni child secks
     }
     if (cp.name == "Charge") {
         cp.newabilities[0].dmgmultincrease = cp.values[cp.level-1];
+    }
+    if (cp.name == "Hyper") {
+        cp.newabilities[0].movementincrease = cp.values[cp.level-1];
     }
     if (cp.removeprimary) {
         for (p in currentPlant.primaries) {
@@ -4889,6 +4918,24 @@ function ZombieTurn(z) {
                                             fighterPhysArray[fighterArray.indexOf(currentPlant)].src = "chewy.gif";   
                                         }
                                         fighterPhysArray[fighterArray.indexOf(currentPlant)].style.filter = "";
+                                    }
+                                    else if (currentPlant.movestunned) {
+                                        if (!(CriticalStage) && !(IsBossWave)) {
+                                            PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
+                                            MusicFade(ZombieTurnTheme,PlantTurnTheme);
+                                        }
+                                        setTimeout(function() {
+                                            UpdateTicks();
+                                            UpdatePassivePerks("everyturn");
+                                            IsPlayerTurn = true;
+                                            ConsoleHistory.push("~ Plant's Turn ~");
+                                            MovesLeft = 0;
+                                            CanAbility = [true, true];
+                                            abilitybuttons.style.display = "block";
+                                            UpdateTurnCount();
+                                            SaveGame();
+                                        }, 500)
+                                        CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
                                     }
                                 }, 1500);
                             }
