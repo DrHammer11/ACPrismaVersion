@@ -257,7 +257,7 @@ function LoadAlmanac() {
     MessageText.className = "MessageHeader";
     MessageText.innerHTML = "ZOMBIES (you've found "+displayedZombies.length+"/"+unlockableZombies.length+" zombies)";
     Message.appendChild(MessageText);
-    for (z in unlockableZombies) {
+    for (z in unlockableZombies) { //*add ability to view abilities
         if (z%ColumnCount == 0) {
             DownCounter += 1;
         }
@@ -1244,7 +1244,7 @@ function SaveGame() {
     //console messages
     UpdateData([difficultylevel, PlantTurnTheme.sound.currentTime, CriticalStage, TheBossWave, ConsoleHistory],"MiscData");
 }
-function LoadGame() {
+function LoadGame() { //*add laoding screen
     PlantData = loadData("PlantData");
     ZombieData = loadData("ZombieData");
     MiscData = loadData("MiscData");
@@ -1578,7 +1578,7 @@ function ResetGame() {
         CBW = ABW[Math.floor(Math.random() * ABW.length)];
         TheBossWave = CBW;
         ZombieArray = CBW.zombies;
-        availablecoords = CBW.availablecoords;
+        availablecoords = CBW.availablecoords.concat([]);
         if (CBW.randomizecoords) {
             ZTS = [];
             CPL = 0;
@@ -1590,6 +1590,11 @@ function ResetGame() {
                     availablecoords.splice(availablecoords.indexOf(coordchosen), 1);
                     ZTS.push(NZ);
                     CPL += NZ.powerLevel;
+                }
+                if (availablecoords.length == 0) { 
+                    ZTS = [];
+                    CPL = 0;
+                    availablecoords = CBW.availablecoords.concat([]);
                 }
             }
             ZombieArray = ZTS;
@@ -1619,6 +1624,15 @@ function ResetGame() {
                 availablecoords.splice(availablecoords.indexOf(coordchosen), 1);
                 ZTS.push(NZ);
                 CPL += NZ.powerLevel;
+            }
+            if (availablecoords.length == 0) {
+                ZTS = [];
+                CPL = 0;
+                for (x=4; x<10; x++) {
+                    for (y=0; y<5; y++) {
+                        availablecoords.push([x,y]);
+                    }
+                }
             }
         }
         ZombieArray = ZTS;
@@ -2030,7 +2044,7 @@ function ViewConsoleHistory() {
     };
     Message.appendChild(ScrollUp);
 }
-function ChooseAPerk(chosenPerks=[]) {
+function ChooseAPerk(chosenPerks=[]) { 
     wc = document.getElementById("EverythingFitter");
     MessageContainer = document.createElement("div");
     wc.appendChild(MessageContainer);
@@ -2929,7 +2943,7 @@ ColdResist.values2 = [0,0,25];
 ColdResist.updaterate = "onetime";
 ColdResist.type = "iceimmunity";
 ColdResist.sprite = "IceGuard.PNG"
-passivePerks.push(ColdResist);
+//passivePerks.push(ColdResist);
 LessAccuracy = new PassivePerk();
 LessAccuracy.name = "Pretty Lucky";
 LessAccuracy.desc = "Enemies will miss their attacks more often.";
@@ -3175,10 +3189,13 @@ Corn.splashRadius = 3;
 Corn.range = "board"; 
 Corn.reloadTime = 3;
 Corn.displaySprite = "CornIcon.PNG";
-// Primary: Shatter Shot - Fire a Jade thorn at a Zombie that explodes into fragments when it hits. (Range: 6 Tiles, 3x3 splash) (Damage: 40 Direct, 10 Splash)
-
-// Ability 1: Enhanced Precision - Your primary attack (Shatter Shot) will do double the damage next time you use it. (Cooldown: 3 turns) (Charges do not stack)
-// Ability 2: Corn Strike - Click anywhere on the board to activate a Corn Strike there, dropping exposive corn cobs down on the zombies. (3x3 Splash, 100 Damage Direct, 50 Splash) (Cooldown: 3 Turns)
+Nuke = new AttackType();
+Nuke.name = "Bomb";
+Nuke.desc = "Kills (almost) everything, used for debugging";
+Nuke.damage = 999;
+Nuke.splashDamage = 999;
+Nuke.splashRadius = 7;
+Nuke.range = "board"; 
 JadeCac = new Fighter();
 JadeCac.plant = true;
 JadeCac.name = "Jade Cactus";
@@ -3187,7 +3204,7 @@ JadeCac.permhealth = 150;
 JadeCac.powerLevel = 9001;
 JadeCac.height = "30%";
 JadeCac.chewingtime = 0;
-JadeCac.attacks.push(Shatter,Precision,Corn); 
+JadeCac.attacks.push(Shatter,Precision,Corn,Nuke); 
 JadeCac.primaries = [Shatter];
 JadeCac.aliveSprite = "JadeCactus.PNG";
 JadeCac.iconSprite = "JadeRight.PNG";
@@ -3274,6 +3291,7 @@ HyperPerk.values = [3,4,4];
 HyperPerk.values2 = [1,1,2];
 HyperPerk.newabilities = [Hyper];
 HyperPerk.sprite = "Hyper.PNG";
+HyperPerk.plantName = "Rock Pea";
 HyperPerk.removeprimary = false;
 abilityPerks.push(HyperPerk); 
 DarkBean = new AttackType();
@@ -3943,6 +3961,75 @@ Coneoisseur2 = clone(Coneoisseur);
 Coneoisseur2.underShield = clone(Coneoisseur3);
 Coneoisseur2.aliveSprite = "Coneoisseur2.PNG";
 Coneoisseur.underShield = clone(Coneoisseur2);
+RoboChop = new AttackType();
+RoboChop.name = "Robo Chop";
+RoboChop.damage = 15;
+RoboChop.range = 1;
+RoboChop.shots = 2;
+Laser = new AttackType();
+Laser.name = "Energy Beam";
+Laser.damage = 20;
+Laser.range = 5;
+Laser.reloadTime = 2;
+Laser.STUP = 2;
+CC1 = new AttackType();
+CC1.name = "Code Corrupter";
+CC1.damage = 50;
+CC1.range = 1;
+CC2 = new AttackType();
+CC2.name = "Code Corrupter";
+CC2.damage = 25;
+CC2.range = 2;
+CC2.accuracy = 85;
+CC3 = new AttackType();
+CC3.name = "Code Corrupter";
+CC3.damage = 10;
+CC3.range = 5;
+CC3.accuracy = 75;
+StickyBomb = new AttackType();
+StickyBomb.name = "Sticky Explody Ball";
+StickyBomb.damage = 50;
+StickyBomb.range = 3;
+StickyBomb.accuracy = 75;
+StickyBomb.reloadTime = 4;
+RoboZombie = new Fighter();
+RoboZombie.name = "Cyborg Zombie"; 
+RoboZombie.health = 75;
+RoboZombie.permhealth = 75;
+RoboZombie.powerLevel = 2;
+RoboZombie.movement = 1.5;
+RoboZombie.height = "26%";
+RoboZombie.attacks.push(RoboChop,Laser);
+RoboZombie.aliveSprite = "RoboZombie.PNG";
+RoboShield = new Fighter();
+RoboShield.name = "Cyborg Zombie (With Shield)"; 
+RoboShield.health = 50;
+RoboShield.permhealth = 50;
+RoboShield.powerLevel = 2;
+RoboShield.movement = 1;
+RoboShield.height = "26%";
+RoboShield.underShield = RoboZombie;
+RoboShield.attacks.push(Laser);
+RoboShield.aliveSprite = "RoboShield.PNG";
+RoboCrab = new Fighter();
+RoboCrab.name = "Robo Crab";
+RoboCrab.health = 20;
+RoboCrab.permhealth = 20;
+RoboCrab.powerLevel = 1;
+RoboCrab.wb = 0.1;
+RoboCrab.movement = 3;
+RoboCrab.height = "5%";
+RoboCrab.attacks.push(AnkBite);
+RoboCrab.aliveSprite = "RoboCrab.PNG";  
+ComSci = new Fighter();
+ComSci.name = "Computer Scientist";
+ComSci.health = 100;
+ComSci.permhealth = 100;
+ComSci.powerlevel = 7;
+ComSci.movement = 1.5;
+ComSci.height = "26%";
+ComSci.attacks.push(CC1,StickyBomb,CC2,CC3);
+ComSci.aliveSprite = "ComSci.PNG";
 class BossWave {
     constructor() {
         this.name = ""; //name of boss wave
@@ -3957,9 +4044,25 @@ class BossWave {
         this.background = []; //secret cone stuff
     }
 } //3 waves on turn 5, 4 waves on turn 10, 4 waves on turn 15, 3 waves on turn 20, 3 waves on turn 25, 4 waves on turn 30, 2 waves on turn 35
-//*add technology wave
+//*add technology wave, add yeti wave
+TechWave = new BossWave();
+TechWave.name = "Wave of Technology";
+TechWave.zombies = [RoboZombie,ComSci,RoboCrab,clone(RoboZombie)]; 
+TechWave.image = "TechWave.PNG";   
+TechWave.imageWidth = "25%";
+TechWave.imageLeft = "80%";
+TechWave.availablewaves = [15,20,25,30,35,40];
+for (x=4; x<10; x++) {
+    for (y=0; y<5; y++) {
+        TechWave.availablecoords.push([x,y]);
+    }
+}
+TechWave.randomizecoords = true;
+TechWave.theme = "TechTheme.mp3"; 
+TechWave.background = ["TechTile.PNG","TechBackground.PNG"];
+//BossWaves.push(TechWave);
 AllImps = new BossWave();
-AllImps.name = "Wave of Imps";
+AllImps.name = "Big Trouble, Little Zombie";
 AllImps.zombies = [Imp, ImpKing, clone(Imp), YetiImp, clone(Imp), clone(ImpKing), clone(Imp)]; 
 AllImps.image = "ImpGang.PNG";   
 AllImps.imageWidth = "25%";
@@ -4079,6 +4182,7 @@ makeEntry(Zompea,"Much like a Peashooter to a Zombie, Zombotany Peashooter fires
 makeEntry(Zomnut,"Zombotany Wallnut has a Wallnut for a head, which gives him added health. How does it feel being in the Zombie's shoes now, plants?","Browncoat Zombies hate having to sit there and eat through Wallnuts, so one day a Browncoat Zombie decided to try to eat a Wallnut from the inside out. He made a hole in the Wallnut and then stuck his whole head in. Soon after, he realised his head wouldn't come back out. His Browncoat friends tried to help him, but the Wallnut was stuck on for good. Luckily, Browncoat Zombie was able to blend in with the other Zombotany Zombies so I guess everything worked out.") 
 makeEntry(Zomgatling,"This Zombie is even more dangerous than Gangsta Zombie when it comes to ranged attacks, so make sure he goes down quick.","Zombotany Pea Gatling looks at all other Zombies with disappointment. While they're only able to toss a singular rock, he can fire four peas at once. He knows they can be just as good with projectiles as he can, but they don't bother. It's really disheartening, but he keeps at it. He keeps training them. He. Never. Gives. Up.") 
 makeEntry(Zomchomp,"Zombotany Chomper behaves just like a Chomper, mindlessly charging into battle with the intent to bite your head off.","Zombotany Chomper is quite the celebrity in the Zombotany world. His influence is so powerful, he managed to convince all Zombotany Squashes to ditch the war entirely! That's pretty strong, and he can hold up pretty well in a fight too!") 
+makeEntry(RoboZombie,"This Cybernetically enhanced Zombie is just like a Browncoat Zombie, except better in every way.","[RoboCop reference]") 
 makeEntry(GigaGarg,"Giga Gargantuar is the strongest zombie you'll fight. He has many gangsta friends, as well as an electrically charged pole that he found in a lake.","The \"Giga\" in Giga Gargantuar's name is short for \"Gigantic\", which doesn't make sense, since he is no bigger than a regular Gargantuar. Perhaps it refers to his strength rather than his physical size? He ponders this question often. It makes his head hurt. A lot.") 
 MZ = new AlmEntry();
 MZ.name = "Mystery Zombie";
@@ -4099,7 +4203,14 @@ NE.desc = "Coneoisseur loves cones, so he always wears a giant stack of cones on
 NE.stats = "Health: 50 per cone<br>Abilities: Mock, Cone Appétit";
 NE.flavour = "While most other zombies are stupid and clueless, the Coneoisseur is brilliant. He has a degree in Kónosology (the study of cones), and has memorized the formula for a cone's volume by heart (1/3rd height times pi radius squared). He's eager to share his fascination for cones with the world, but the world often responds with \"Eeek! A Zombie! Run!\"";
 AlmEntries.push(NE);
-unlockableZombies = [Browncoat, Conehead, Buckethead, Imp, Screendoor, Newspaper,GunZomb,  Yeti, FootballZomb, Disco, Backup, YetiImp, ImpKing, Zompea, Zomnut, Zomgatling, Zomchomp, ConeCrab, Coneoisseur, Gargantuar, GigaGarg] 
+NE2 = new AlmEntry();
+NE2.name = "Computer Scientist";
+NE2.image = "ComSci.PNG";
+NE2.desc = "Computer Scientist doesn't really belong in this game. I'm not sure what he's doing here. Anyways, just try not to get too close to him.";
+NE2.stats = "Health: 100<br>Abilities: Code Corrupter, Sticky Explody Ball";
+NE2.flavour = "Computer Scientist is very well known in the zombie community, as he’s the only zombie video game developer. Some of his most notable games consist of \“Super Zombie Brainz\” and \“The Legend if Brainz: The Hunger for Brainz,\” For the \“ZES.\” (Zombie Entertainment System) Unfortunately all of his games get poor review scores because its either a browncoat smashing his head on a keyboard or it’s Zomboss complaining that the game isnt about worshipping Zomboss and buying autographed pictures of, you guessed it, Zomboss.";
+AlmEntries.push(NE2);
+unlockableZombies = [Browncoat, Conehead, Buckethead, Imp, Screendoor, Newspaper,GunZomb,  Yeti, FootballZomb, Disco, Backup, YetiImp, ImpKing, Zompea, Zomnut, Zomgatling, Zomchomp, ConeCrab, Coneoisseur, RoboZombie, RoboCrab, ComSci, Gargantuar, GigaGarg] 
 
 gridx = 9
 gridy = 5
@@ -5025,7 +5136,13 @@ function ZombieTurn(z) {
                         zombie.supports[s].TimeUntilReady -= 1;
                     }
                 }
-                CalculateMoves(zombie);
+                if (zombie.movestunned) {
+                    zombie.movestunned = false;
+                    CreateConsoleText(zombie.name+" cannot move as they are frozen.")
+                }
+                else {
+                    CalculateMoves(zombie);
+                }
                 setTimeout(function() {
                     for (s in zombie.supports) {
                         TestSupport(zombie,zombie.supports[s]); 
@@ -5095,6 +5212,7 @@ function ZombieTurn(z) {
                                                 IsPlayerTurn = true;
                                                 ConsoleHistory.push("~ Plant's Turn ~");
                                                 if (currentPlant.movestunned) {
+                                                    currentPlant.movestunned = false;
                                                     MovesLeft = 0;
                                                     CreateConsoleText(currentPlant.name+" cannot move as they are frozen.")
                                                 }
@@ -5112,6 +5230,7 @@ function ZombieTurn(z) {
                                         PlantTurnTheme.sound.currentTime = ZombieTurnTheme.sound.currentTime;
                                         MusicFade(ZombieTurnTheme,PlantTurnTheme);
                                     }
+                                    currentPlant.movestunned = false;
                                     setTimeout(function() {
                                         UpdateTicks();
                                         UpdatePassivePerks("everyturn");
@@ -5224,7 +5343,7 @@ function tryToMove() {
     }
 }
 
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function(event) { //*add hotkeys
     if (MovesLeft>0 && IsPlayerTurn) {
         prevppos = currentPlant.coords.slice(0);
         if(event.keyCode == 37) {
